@@ -2,11 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Add these CSS custom properties to the top of your App.css */
+
 :root {
   --primary: #1a355b;
-  --primary-dark: #0f2240;
+  --primary-dark: #0f2140;
   --secondary: #ffc72c;
-  --secondary-dark: #e6b426;
+  --secondary-dark: #e6b329;
+}
+
+/* Update your existing utility classes */
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.bg-primary {
+  background-color: var(--primary) !important;
+}
+
+.hover\:bg-primary-dark:hover {
+  background-color: var(--primary-dark) !important;
+}
+
+.text-secondary {
+  color: var(--secondary) !important;
+}
+
+.bg-secondary {
+  background-color: var(--secondary) !important;
+}
+
+.border-primary {
+  border-color: var(--primary) !important;
+}
+
+.focus\:ring-primary:focus {
+  --tw-ring-color: var(--primary) !important;
 }
 
 body {
@@ -238,5 +269,107 @@ body {
   
   .alert-info {
     @apply bg-blue-100 border border-blue-400 text-blue-700;
+  }
+}
+
+
+/* Add these keyframes and animations to your App.css */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(180deg);
+  }
+}
+
+@keyframes float-delayed {
+  0%, 100% {
+    transform: translateY(0px) rotate(45deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(225deg);
+  }
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.1);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(255, 199, 44, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 199, 44, 0.8);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float-delayed 8s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 10s ease-in-out infinite;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #1a355b, #ffc72c);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #ffc72c, #1a355b);
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .backdrop-blur-lg {
+    backdrop-filter: blur(10px);
+  }
+  
+  /* Reduce blur intensity on mobile for better performance */
+  .filter.blur-xl {
+    filter: blur(15px);
   }
 }
