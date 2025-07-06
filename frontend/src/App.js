@@ -742,6 +742,16 @@ const Dashboard = () => {
               >
                 Daily Logging
               </button>
+              <button
+                onClick={() => setActiveTab('reports')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'reports'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Reports & Analytics
+              </button>
             </nav>
           </div>
         </div>
