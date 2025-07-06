@@ -76,6 +76,14 @@ class User(BaseModel):
     factory_id: Optional[str] = None  # Only for factory employers
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class UserResponse(BaseModel):
+    id: str
+    username: str
+    email: str
+    role: str
+    factory_id: Optional[str] = None
+    created_at: datetime
+
 class UserCreate(BaseModel):
     username: str
     email: str
