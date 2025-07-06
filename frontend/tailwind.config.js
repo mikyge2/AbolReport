@@ -5,7 +5,18 @@ module.exports = {
     "./public/index.html"
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: {
+          DEFAULT: '#1a355b',
+          dark: '#0f2240',
+        },
+        secondary: {
+          DEFAULT: '#ffc72c',
+          dark: '#e6b426',
+        },
+      },
+    },
   },
   plugins: [],
 };
