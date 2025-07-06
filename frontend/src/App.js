@@ -517,17 +517,32 @@ const Dashboard = () => {
 
     const handleSubmit = async (e) => {
       e.preventDefault();
+      const submitToast = toast.loading('Submitting daily log...');
+      
       try {
         await axios.post(`${API}/daily-logs`, {
           ...formData,
           factory_id: selectedFactory,
           date: new Date(formData.date).toISOString()
         });
-        alert('Daily log submitted successfully!');
+        
+        toast.success('Daily log submitted successfully!', { id: submitToast });
         fetchDailyLogs();
         fetchDashboardData();
+        
+        // Reset form
+        setFormData({
+          date: new Date().toISOString().split('T')[0],
+          production_data: {},
+          sales_data: {},
+          downtime_hours: 0,
+          downtime_reason: '',
+          stock_data: {}
+        });
+        setSelectedFactory('');
+        
       } catch (error) {
-        alert('Failed to submit daily log: ' + (error.response?.data?.detail || 'Unknown error'));
+        toast.error('Failed to submit daily log: ' + (error.response?.data?.detail || 'Unknown error'), { id: submitToast });
       }
     };
 
