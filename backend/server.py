@@ -338,6 +338,200 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         created_at=current_user.created_at
     )
 
+@api_router.get("/export-excel")
+async def export_excel_report(
+    factory_id: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Export comprehensive Excel report"""
+    query = {}
+    
+    # Filter by factory access
+    if current_user.role == "factory_employer":
+        query["factory_id"] = current_user.factory_id
+    elif factory_id:
+        query["factory_id"] = factory_id
+    
+    # Date filtering
+    if start_date or end_date:
+        query["date"] = {}
+        if start_date:
+            query["date"]["$gte"] = start_date
+        if end_date:
+            query["date"]["$lte"] = end_date
+    
+    # Get logs
+    logs = await db.daily_logs.find(query).to_list(1000)
+    
+    if not logs:
+        raise HTTPException(status_code=404, detail="No data found for the specified criteria")
+    
+    # Prepare data for Excel
+    excel_data = []
+    for log in logs:
+        factory_name = FACTORIES.get(log["factory_id"], {}).get("name", log["factory_id"])
+        sku_unit = FACTORIES.get(log["factory_id"], {}).get("sku_unit", "Unit")
+        
+        # Base row data
+        base_row = {
+            "Date": log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"],
+            "Factory": factory_name,
+            "SKU Unit": sku_unit,
+            "Downtime Hours": log["downtime_hours"],
+            "Downtime Reason": log["downtime_reason"],
+            "Created By": log["created_by"]
+        }
+        
+        # Add production data
+        for product, amount in log["production_data"].items():
+            row = base_row.copy()
+            row.update({
+                "Product": product,
+                "Production Amount": amount,
+                "Sales Amount": log["sales_data"].get(product, {}).get("amount", 0),
+                "Unit Price": log["sales_data"].get(product, {}).get("unit_price", 0),
+                "Revenue": log["sales_data"].get(product, {}).get("amount", 0) * log["sales_data"].get(product, {}).get("unit_price", 0),
+                "Current Stock": log["stock_data"].get(product, 0)
+            })
+            excel_data.append(row)
+    
+    # Create Excel file
+    df = pd.DataFrame(excel_data)
+    
+    # Create Excel writer object
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Main data sheet
+        df.to_excel(writer, sheet_name='Daily Logs', index=False)
+        
+        # Summary sheet
+        summary_data = []
+        for factory_id, factory_info in FACTORIES.items():
+            factory_logs = [log for log in logs if log["factory_id"] == factory_id]
+            if factory_logs:
+                total_production = sum(sum(log["production_data"].values()) for log in factory_logs)
+                total_sales = sum(sum(item["amount"] for item in log["sales_data"].values()) for log in factory_logs)
+                total_revenue = sum(sum(item["amount"] * item["unit_price"] for item in log["sales_data"].values()) for log in factory_logs)
+                total_downtime = sum(log["downtime_hours"] for log in factory_logs)
+                avg_stock = sum(sum(log["stock_data"].values()) for log in factory_logs) / len(factory_logs)
+                
+                summary_data.append({
+                    "Factory": factory_info["name"],
+                    "Total Production": total_production,
+                    "Total Sales": total_sales,
+                    "Total Revenue": total_revenue,
+                    "Total Downtime (Hours)": total_downtime,
+                    "Average Stock": avg_stock,
+                    "Number of Records": len(factory_logs)
+                })
+        
+        summary_df = pd.DataFrame(summary_data)
+        summary_df.to_excel(writer, sheet_name='Summary', index=False)
+    
+    output.seek(0)
+    
+    # Generate filename
+    filename = f"factory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    return StreamingResponse(
+        BytesIO(output.read()),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/analytics/trends")
+async def get_analytics_trends(
+    factory_id: Optional[str] = None,
+    days: int = 30,
+    current_user: User = Depends(get_current_user)
+):
+    """Get analytics trends for charts"""
+    query = {}
+    
+    # Filter by factory access
+    if current_user.role == "factory_employer":
+        query["factory_id"] = current_user.factory_id
+    elif factory_id:
+        query["factory_id"] = factory_id
+    
+    # Date filtering for last N days
+    start_date = datetime.utcnow() - timedelta(days=days)
+    query["date"] = {"$gte": start_date}
+    
+    logs = await db.daily_logs.find(query).sort("date", 1).to_list(1000)
+    
+    # Prepare trend data
+    trends = {
+        "production": [],
+        "sales": [],
+        "downtime": [],
+        "stock": [],
+        "dates": []
+    }
+    
+    # Group by date
+    daily_data = {}
+    for log in logs:
+        date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
+        if date_str not in daily_data:
+            daily_data[date_str] = {
+                "production": 0,
+                "sales": 0,
+                "downtime": 0,
+                "stock": 0
+            }
+        
+        daily_data[date_str]["production"] += sum(log["production_data"].values())
+        daily_data[date_str]["sales"] += sum(item["amount"] for item in log["sales_data"].values())
+        daily_data[date_str]["downtime"] += log["downtime_hours"]
+        daily_data[date_str]["stock"] += sum(log["stock_data"].values())
+    
+    # Sort by date and prepare final data
+    for date_str in sorted(daily_data.keys()):
+        trends["dates"].append(date_str)
+        trends["production"].append(daily_data[date_str]["production"])
+        trends["sales"].append(daily_data[date_str]["sales"])
+        trends["downtime"].append(daily_data[date_str]["downtime"])
+        trends["stock"].append(daily_data[date_str]["stock"])
+    
+    return trends
+
+@api_router.get("/analytics/factory-comparison")
+async def get_factory_comparison(
+    days: int = 30,
+    current_user: User = Depends(get_current_user)
+):
+    """Get factory comparison data"""
+    if current_user.role == "factory_employer":
+        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
+    
+    start_date = datetime.utcnow() - timedelta(days=days)
+    query = {"date": {"$gte": start_date}}
+    
+    logs = await db.daily_logs.find(query).to_list(1000)
+    
+    factory_data = {}
+    for factory_id, factory_info in FACTORIES.items():
+        factory_logs = [log for log in logs if log["factory_id"] == factory_id]
+        
+        factory_data[factory_id] = {
+            "name": factory_info["name"],
+            "production": sum(sum(log["production_data"].values()) for log in factory_logs),
+            "sales": sum(sum(item["amount"] for item in log["sales_data"].values()) for log in factory_logs),
+            "revenue": sum(sum(item["amount"] * item["unit_price"] for item in log["sales_data"].values()) for log in factory_logs),
+            "downtime": sum(log["downtime_hours"] for log in factory_logs),
+            "efficiency": 0  # Will calculate efficiency percentage
+        }
+        
+        # Calculate efficiency (production vs planned - using production as baseline)
+        if factory_data[factory_id]["production"] > 0:
+            planned_production = factory_data[factory_id]["production"] * 1.2  # Assume 20% more was planned
+            factory_data[factory_id]["efficiency"] = (factory_data[factory_id]["production"] / planned_production) * 100
+    
+    return factory_data
+
 # Include the router in the main app
 app.include_router(api_router)
 
