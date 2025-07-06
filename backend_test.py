@@ -186,6 +186,120 @@ class FactoryPortalAPITest(unittest.TestCase):
             print("✅ Current user info retrieved successfully")
         except Exception as e:
             self.fail(f"❌ Get current user test failed: {str(e)}")
+            
+    def test_09_export_excel(self):
+        """Test Excel export functionality"""
+        if not self.token:
+            self.skipTest("Token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.token}"}
+        
+        try:
+            # Test full export
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.headers['Content-Type'], 
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            
+            # Save the file
+            file_path = os.path.join(self.download_dir, "full_export.xlsx")
+            with open(file_path, 'wb') as f:
+                f.write(response.content)
+                
+            # Check if file exists and has content
+            self.assertTrue(os.path.exists(file_path))
+            self.assertTrue(os.path.getsize(file_path) > 0)
+            
+            print("✅ Excel export functionality works correctly")
+            print(f"  - Downloaded file size: {os.path.getsize(file_path)} bytes")
+            
+            # Test filtered export
+            factory_id = "amen_water"
+            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
+            end_date = datetime.utcnow().isoformat()
+            
+            response = requests.get(
+                f"{self.base_url}/export-excel?factory_id={factory_id}&start_date={start_date}&end_date={end_date}", 
+                headers=headers
+            )
+            
+            # Check if response is successful (even if no data is found)
+            if response.status_code == 200:
+                file_path = os.path.join(self.download_dir, "filtered_export.xlsx")
+                with open(file_path, 'wb') as f:
+                    f.write(response.content)
+                print("✅ Filtered Excel export works correctly")
+            elif response.status_code == 404:
+                print("ℹ️ No data found for filtered export (this is acceptable)")
+            else:
+                self.fail(f"❌ Filtered Excel export failed with status code {response.status_code}")
+                
+        except Exception as e:
+            self.fail(f"❌ Excel export test failed: {str(e)}")
+            
+    def test_10_analytics_trends(self):
+        """Test analytics trends endpoint"""
+        if not self.token:
+            self.skipTest("Token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/analytics/trends", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            trends_data = response.json()
+            
+            # Verify the expected fields are present
+            expected_fields = ["production", "sales", "downtime", "stock", "dates"]
+            for field in expected_fields:
+                self.assertIn(field, trends_data)
+                self.assertIsInstance(trends_data[field], list)
+                
+            print("✅ Analytics trends endpoint returned data successfully")
+            print(f"  - Data points: {len(trends_data['dates'])}")
+            
+            # Test with factory filter
+            factory_id = "amen_water"
+            response = requests.get(f"{self.base_url}/analytics/trends?factory_id={factory_id}", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            print(f"✅ Analytics trends with factory filter works correctly")
+            
+        except Exception as e:
+            self.fail(f"❌ Analytics trends test failed: {str(e)}")
+            
+    def test_11_factory_comparison(self):
+        """Test factory comparison endpoint (headquarters only)"""
+        if not self.token:
+            self.skipTest("Token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=headers)
+            
+            # This should work for headquarters users
+            if self.user_info["role"] == "headquarters":
+                self.assertEqual(response.status_code, 200)
+                comparison_data = response.json()
+                
+                # Check if we have data for each factory
+                for factory_id in ["amen_water", "mintu_plast", "mintu_export", "wakene_food"]:
+                    self.assertIn(factory_id, comparison_data)
+                    factory_data = comparison_data[factory_id]
+                    expected_metrics = ["name", "production", "sales", "revenue", "downtime", "efficiency"]
+                    for metric in expected_metrics:
+                        self.assertIn(metric, factory_data)
+                        
+                print("✅ Factory comparison endpoint returned data successfully")
+                print(f"  - Factories compared: {len(comparison_data)}")
+                
+            # This should fail for factory users
+            elif self.user_info["role"] == "factory_employer":
+                self.assertEqual(response.status_code, 403)
+                print("✅ Factory comparison correctly restricted for factory users")
+                
+        except Exception as e:
+            self.fail(f"❌ Factory comparison test failed: {str(e)}")
 
 if __name__ == "__main__":
     # Run the tests in order
