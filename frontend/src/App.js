@@ -995,7 +995,6 @@ const Dashboard = () => {
     </div>
   );
 };
-};
 
 // Main App Component
 const App = () => {
