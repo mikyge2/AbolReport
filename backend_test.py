@@ -1,6 +1,7 @@
 import requests
 import unittest
 import json
+import os
 from datetime import datetime, timedelta
 
 class FactoryPortalAPITest(unittest.TestCase):
@@ -13,6 +14,11 @@ class FactoryPortalAPITest(unittest.TestCase):
         # Test user credentials - using demo credentials from the frontend
         self.test_username = "admin"
         self.test_password = "admin123"
+        
+        # Create a directory for downloaded files if it doesn't exist
+        self.download_dir = "/tmp/factory_portal_test_downloads"
+        if not os.path.exists(self.download_dir):
+            os.makedirs(self.download_dir)
 
     def test_01_backend_connectivity(self):
         """Test if the backend is running and accessible"""
