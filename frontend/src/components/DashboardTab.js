@@ -100,18 +100,42 @@ const DashboardTab = () => {
         ],
     };
 
-    const factoryComparisonData = {
+    // Separate factory comparison charts
+    const factoryProductionData = {
         labels: Object.values(comparisonData).map(factory => factory.name),
         datasets: [
             {
                 label: 'Production',
                 data: Object.values(comparisonData).map(factory => factory.production),
                 backgroundColor: 'rgba(26, 53, 91, 0.6)',
+                borderColor: 'rgb(26, 53, 91)',
+                borderWidth: 1,
             },
+        ],
+    };
+
+    const factorySalesData = {
+        labels: Object.values(comparisonData).map(factory => factory.name),
+        datasets: [
             {
                 label: 'Sales',
                 data: Object.values(comparisonData).map(factory => factory.sales),
                 backgroundColor: 'rgba(255, 199, 44, 0.6)',
+                borderColor: 'rgb(255, 199, 44)',
+                borderWidth: 1,
+            },
+        ],
+    };
+
+    const factoryDowntimeData = {
+        labels: Object.values(comparisonData).map(factory => factory.name),
+        datasets: [
+            {
+                label: 'Downtime Hours',
+                data: Object.values(comparisonData).map(factory => factory.downtime),
+                backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                borderColor: 'rgb(239, 68, 68)',
+                borderWidth: 1,
             },
         ],
     };
@@ -168,7 +192,7 @@ const DashboardTab = () => {
                     className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors flex items-center space-x-2"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v10a2 2 0 01-2-2H5a2 2 0 01-2-2z" />
                     </svg>
                     <span>Export Excel Report</span>
                 </button>
@@ -214,17 +238,23 @@ const DashboardTab = () => {
                     )}
                 </div>
 
-                {/* Factory Comparison - Only for headquarters */}
+                {/* Factory Performance Comparison - Only for headquarters */}
                 {user.role === 'headquarters' && (
                     <>
+                        {/* Factory Production Comparison */}
                         <div className="bg-white rounded-lg shadow-md p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Factory Performance Comparison</h3>
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Factory Production Comparison</h3>
                             {Object.keys(comparisonData).length > 0 ? (
-                                <Bar data={factoryComparisonData} options={{
+                                <Bar data={factoryProductionData} options={{
                                     responsive: true,
                                     scales: {
                                         y: {
                                             beginAtZero: true,
+                                        },
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: true,
                                         },
                                     },
                                 }} />
@@ -235,6 +265,55 @@ const DashboardTab = () => {
                             )}
                         </div>
 
+                        {/* Factory Sales Comparison */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Factory Sales Comparison</h3>
+                            {Object.keys(comparisonData).length > 0 ? (
+                                <Bar data={factorySalesData} options={{
+                                    responsive: true,
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                        },
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: true,
+                                        },
+                                    },
+                                }} />
+                            ) : (
+                                <div className="flex justify-center items-center h-64">
+                                    <p className="text-gray-500">No data available</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Factory Downtime Comparison */}
+                        <div className="bg-white rounded-lg shadow-md p-6">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Factory Downtime Comparison</h3>
+                            {Object.keys(comparisonData).length > 0 ? (
+                                <Bar data={factoryDowntimeData} options={{
+                                    responsive: true,
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                        },
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: true,
+                                        },
+                                    },
+                                }} />
+                            ) : (
+                                <div className="flex justify-center items-center h-64">
+                                    <p className="text-gray-500">No data available</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Factory Efficiency */}
                         <div className="bg-white rounded-lg shadow-md p-6">
                             <h3 className="text-lg font-semibold text-gray-800 mb-4">Factory Efficiency</h3>
                             {Object.keys(comparisonData).length > 0 ? (
