@@ -158,7 +158,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return User(**user)
 
 # Routes
-@api_router.post("/register", response_model=User)
+@api_router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate):
     # Check if user exists
     existing_user = await db.users.find_one({"username": user.username})
@@ -178,9 +178,15 @@ async def register(user: UserCreate):
     user_obj = User(**user_dict)
     await db.users.insert_one(user_obj.dict())
     
-    # Remove password_hash from response
-    user_response = user_obj.dict()
-    del user_response["password_hash"]
+    # Create response without password_hash
+    user_response = UserResponse(
+        id=user_obj.id,
+        username=user_obj.username,
+        email=user_obj.email,
+        role=user_obj.role,
+        factory_id=user_obj.factory_id,
+        created_at=user_obj.created_at
+    )
     return user_response
 
 @api_router.post("/login", response_model=Token)
