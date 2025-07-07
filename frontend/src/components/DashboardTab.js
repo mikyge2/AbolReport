@@ -8,6 +8,7 @@ import { AuthContext } from '../context/AuthContext';
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const DashboardTab = () => {
+    const { user, logout } = React.useContext(AuthContext);
     const [analyticsData, setAnalyticsData] = useState({});
     const [comparisonData, setComparisonData] = useState({});
     const [loading, setLoading] = useState(true);
