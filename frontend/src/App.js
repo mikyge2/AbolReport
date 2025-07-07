@@ -18,22 +18,9 @@ const App = () => {
         position="top-right"
         toastOptions={{
           duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            iconTheme: {
-              primary: '#4ade80',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
+          style: { background: '#363636', color: '#fff' },
+          success: { iconTheme: { primary: '#4ade80', secondary: '#fff' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
         }}
       />
       <AuthProvider>
@@ -52,7 +39,6 @@ const App = () => {
             return user ? <Dashboard /> : <Login />;
           }}
         </AuthContext.Consumer>
-        
       </AuthProvider>
     </div>
   );

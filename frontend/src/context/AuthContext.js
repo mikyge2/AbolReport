@@ -36,10 +36,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(`${API}/login`, { username, password });
       const { access_token, user_info } = response.data;
+
       localStorage.setItem('token', access_token);
       axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-      setUser(user_info);
-      return true;
+
+      if (user_info) {
+        setUser(user_info);
+        return true;
+      } else {
+        // fallback if API doesn't return user_info
+        window.location.reload();
+        return true;
+      }
     } catch (error) {
       console.error('Login failed:', error);
       return false;
