@@ -11,6 +11,7 @@ const DashboardTab = () => {
     const [analyticsData, setAnalyticsData] = useState({});
     const [comparisonData, setComparisonData] = useState({});
     const [loading, setLoading] = useState(true);
+    const [dashboardData, setDashboardData] = useState({});
 
     useEffect(() => {
         fetchAnalyticsData();

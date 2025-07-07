@@ -52,6 +52,7 @@ const App = () => {
             return user ? <Dashboard /> : <Login />;
           }}
         </AuthContext.Consumer>
+        
       </AuthProvider>
     </div>
   );
