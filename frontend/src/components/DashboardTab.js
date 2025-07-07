@@ -227,9 +227,9 @@ const DashboardTab = () => {
                 {user?.role === 'headquarters' && (
                     <>
                         <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
+                            <h3 className="text-lg font-semibold mb-4">Factory Production Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
-                                <Bar data={factoryProductionData} options={barChartOptions}  />
+                                <Bar data={factoryProductionData} options={barChartOptions} />
                             ) : (
                                 <p>No data available</p>
                             )}
@@ -237,7 +237,23 @@ const DashboardTab = () => {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Factory Sales Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
-                                <Bar data={factorySalesData} options={barChartOptions} />
+                                <Bar data={factorySalesData} options={barChartOptions}/>
+                            ) : (
+                                <p>No data available</p>
+                            )}
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
+                            {Object.keys(comparisonData || {}).length > 0 ? (
+                                <Doughnut
+                                    data={efficiencyData}
+                                    options={{
+                                        responsive: true,
+                                        plugins: {
+                                            legend: { position: 'bottom' },
+                                        },
+                                    }}
+                                />
                             ) : (
                                 <p>No data available</p>
                             )}
