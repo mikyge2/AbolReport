@@ -338,6 +338,71 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
         created_at=current_user.created_at
     )
 
+@api_router.get("/users", response_model=List[UserResponse])
+async def list_users(current_user: User = Depends(get_current_user)):
+    if current_user.role != "headquarters":
+        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
+    
+    users = await db.users.find().to_list(1000)
+    return [
+        UserResponse(
+            id=u["id"],
+            username=u["username"],
+            email=u["email"],
+            role=u["role"],
+            factory_id=u.get("factory_id"),
+            created_at=u["created_at"]
+        )
+        for u in users
+    ]
+
+@api_router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(user_id: str, updated_data: dict, current_user: User = Depends(get_current_user)):
+    if current_user.role != "headquarters":
+        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
+    
+    existing_user = await db.users.find_one({"id": user_id})
+    if not existing_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    updates = {}
+
+    # You can selectively allow fields to be updated
+    if "first_name" in updated_data:
+        updates["first_name"] = updated_data["first_name"]
+    if "last_name" in updated_data:
+        updates["last_name"] = updated_data["last_name"]
+    if "username" in updated_data:
+        updates["username"] = updated_data["username"]
+    if "password" in updated_data and updated_data["password"]:
+        updates["password_hash"] = get_password_hash(updated_data["password"])
+    if "factory_id" in updated_data:
+        updates["factory_id"] = updated_data["factory_id"]
+
+    await db.users.update_one({"id": user_id}, {"$set": updates})
+
+    # Return updated user
+    user = await db.users.find_one({"id": user_id})
+    return UserResponse(
+        id=user["id"],
+        username=user["username"],
+        email=user["email"],
+        role=user["role"],
+        factory_id=user.get("factory_id"),
+        created_at=user["created_at"]
+    )
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "headquarters":
+        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
+    
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {"detail": "User deleted successfully"}
+
 @api_router.get("/export-excel")
 async def export_excel_report(
     factory_id: Optional[str] = None,

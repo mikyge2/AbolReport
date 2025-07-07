@@ -3,6 +3,8 @@ import React, { useState, useContext } from 'react';
 import DashboardTab from './DashboardTab';
 import LoggingTab from './LoggingTab';
 import ReportsTab from './ReportsTab';
+import UserManagementTab from './UserManagementTab';
+
 import { AuthContext } from '../context/AuthContext';
 
 const Dashboard = () => {
@@ -37,8 +39,8 @@ const Dashboard = () => {
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'dashboard'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               Dashboard
@@ -46,8 +48,8 @@ const Dashboard = () => {
             <button
               onClick={() => setActiveTab('logging')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'logging'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               Daily Logging
@@ -55,18 +57,31 @@ const Dashboard = () => {
             <button
               onClick={() => setActiveTab('reports')}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'reports'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
             >
               Reports & Analytics
             </button>
+            {user?.role === 'headquarters' && (
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'users'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+              >
+                User Management
+              </button>
+            )}
           </nav>
         </div>
 
         {activeTab === 'dashboard' && <DashboardTab />}
         {activeTab === 'logging' && <LoggingTab />}
         {activeTab === 'reports' && <ReportsTab />}
+        {activeTab === 'users' && <UserManagementTab />}
+
       </div>
     </div>
   );
