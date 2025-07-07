@@ -105,7 +105,7 @@ const DashboardTab = () => {
         ],
     };
 
-    const factoryComparisonData = {
+    const factoryProductionData = {
         labels: Object.values(comparisonData || {}).map((f) => f.name),
         datasets: [
             {
@@ -113,6 +113,12 @@ const DashboardTab = () => {
                 data: Object.values(comparisonData || {}).map((f) => f.production),
                 backgroundColor: 'rgba(26,53,91,0.6)',
             },
+        ],
+    };
+
+    const factorySalesData = {
+        labels: Object.values(comparisonData || {}).map((f) => f.name),
+        datasets: [
             {
                 label: 'Sales',
                 data: Object.values(comparisonData || {}).map((f) => f.sales),
@@ -120,6 +126,7 @@ const DashboardTab = () => {
             },
         ],
     };
+
 
     const efficiencyData = {
         labels: Object.values(comparisonData || {}).map((f) => f.name),
@@ -143,6 +150,21 @@ const DashboardTab = () => {
             },
         ],
     };
+
+    const barChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false, // Hide legend since there's only one dataset
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+            },
+        },
+    };
+
 
     return (
         <div className="space-y-8">
@@ -205,25 +227,17 @@ const DashboardTab = () => {
                 {user?.role === 'headquarters' && (
                     <>
                         <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Factory Performance Comparison</h3>
+                            <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
-                                <Bar data={factoryComparisonData} options={{ responsive: true }} />
+                                <Bar data={factoryProductionData} options={barChartOptions}  />
                             ) : (
                                 <p>No data available</p>
                             )}
                         </div>
                         <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
+                            <h3 className="text-lg font-semibold mb-4">Factory Sales Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
-                                <Doughnut
-                                    data={efficiencyData}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: { position: 'bottom' },
-                                        },
-                                    }}
-                                />
+                                <Bar data={factorySalesData} options={barChartOptions} />
                             ) : (
                                 <p>No data available</p>
                             )}
