@@ -242,11 +242,47 @@ const DashboardTab = () => {
 
             {/* Charts */}
             <div className="space-y-6">
-                {/* Factory-specific Production vs Sales Charts */}
+                {/* Factory-specific Production and Sales Charts */}
                 {user?.role === 'headquarters' && analyticsData?.factories && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
-                            <div key={factoryId} className="bg-white rounded-lg shadow p-6">
+                            <React.Fragment key={factoryId}>
+                                <div className="bg-white rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold mb-4">
+                                        {factoryData.name} - Production Trend (30 Days)
+                                    </h3>
+                                    {loading ? (
+                                        <p>Loading...</p>
+                                    ) : (
+                                        <Line 
+                                            data={createFactoryProductionChartData(factoryData, factoryData.name)} 
+                                            options={lineChartOptions} 
+                                        />
+                                    )}
+                                </div>
+                                <div className="bg-white rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold mb-4">
+                                        {factoryData.name} - Sales Trend (30 Days)
+                                    </h3>
+                                    {loading ? (
+                                        <p>Loading...</p>
+                                    ) : (
+                                        <Line 
+                                            data={createFactorySalesChartData(factoryData, factoryData.name)} 
+                                            options={lineChartOptions} 
+                                        />
+                                    )}
+                                </div>
+                            </React.Fragment>
+                        ))}
+                    </div>
+                )}
+
+                {/* Factory-specific Production vs Sales Combined Charts */}
+                {user?.role === 'headquarters' && analyticsData?.factories && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
+                            <div key={`combined-${factoryId}`} className="bg-white rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold mb-4">
                                     {factoryData.name} - Production vs Sales Trend (30 Days)
                                 </h3>
