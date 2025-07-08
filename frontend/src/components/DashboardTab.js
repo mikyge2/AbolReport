@@ -72,8 +72,8 @@ const DashboardTab = () => {
         }
     };
 
-    // Create separate production chart data for each factory
-    const createFactoryProductionChartData = (factoryData, factoryName) => {
+    // Enhanced function to create factory-specific production vs sales chart
+    const createFactoryProductionVsSalesChart = (factoryData, factoryName) => {
         return {
             labels: factoryData?.dates || [],
             datasets: [
@@ -83,25 +83,103 @@ const DashboardTab = () => {
                     borderColor: 'rgb(26,53,91)',
                     backgroundColor: 'rgba(26,53,91,0.1)',
                     tension: 0.1,
+                    fill: false,
+                    pointBackgroundColor: 'rgb(26,53,91)',
+                    pointBorderColor: 'rgb(26,53,91)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                 },
-            ],
-        };
-    };
-
-    // Create separate sales chart data for each factory
-    const createFactorySalesChartData = (factoryData, factoryName) => {
-        return {
-            labels: factoryData?.dates || [],
-            datasets: [
                 {
                     label: 'Sales',
                     data: factoryData?.sales || [],
                     borderColor: 'rgb(255,199,44)',
                     backgroundColor: 'rgba(255,199,44,0.1)',
                     tension: 0.1,
+                    fill: false,
+                    pointBackgroundColor: 'rgb(255,199,44)',
+                    pointBorderColor: 'rgb(255,199,44)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
                 },
             ],
         };
+    };
+
+    // Enhanced line chart options for daily trends
+    const dailyTrendChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20,
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                }
+            },
+            tooltip: {
+                mode: 'index',
+                intersect: false,
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                callbacks: {
+                    label: function(context) {
+                        const dataset = context.dataset;
+                        const value = context.parsed.y;
+                        return `${dataset.label}: ${value.toLocaleString()} units`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                display: true,
+                title: {
+                    display: true,
+                    text: 'Date',
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                },
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+            y: {
+                display: true,
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Units',
+                    font: {
+                        size: 12,
+                        weight: 'bold'
+                    }
+                },
+                grid: {
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.1)'
+                }
+            },
+        },
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
+        hover: {
+            mode: 'index',
+            intersect: false,
+        }
     };
 
     const factoryProductionData = {
@@ -111,7 +189,6 @@ const DashboardTab = () => {
                 label: 'Production',
                 data: Object.values(comparisonData || {}).map((f) => f.production),
                 backgroundColor: 'rgba(26,53,91,0.6)',
-                // Add SKU/unit data for tooltips
                 skuUnit: Object.values(comparisonData || {}).map((f) => f.sku_unit || f.unit || 'units'),
             },
         ],
@@ -124,7 +201,6 @@ const DashboardTab = () => {
                 label: 'Sales',
                 data: Object.values(comparisonData || {}).map((f) => f.sales),
                 backgroundColor: 'rgba(255,199,44,0.6)',
-                // Add SKU/unit data for tooltips
                 skuUnit: Object.values(comparisonData || {}).map((f) => f.sku_unit || f.unit || 'units'),
             },
         ],
@@ -242,110 +318,93 @@ const DashboardTab = () => {
 
             {/* Charts */}
             <div className="space-y-6">
-                {/* Factory-specific Production and Sales Charts */}
+                {/* Factory-specific Production vs Sales Daily Trend Charts */}
                 {user?.role === 'headquarters' && analyticsData?.factories && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
-                            <React.Fragment key={factoryId}>
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <h3 className="text-lg font-semibold mb-4">
-                                        {factoryData.name} - Production Trend (30 Days)
-                                    </h3>
-                                    {loading ? (
-                                        <p>Loading...</p>
-                                    ) : (
-                                        <Line 
-                                            data={createFactoryProductionChartData(factoryData, factoryData.name)} 
-                                            options={lineChartOptions} 
-                                        />
-                                    )}
-                                </div>
-                                <div className="bg-white rounded-lg shadow p-6">
-                                    <h3 className="text-lg font-semibold mb-4">
-                                        {factoryData.name} - Sales Trend (30 Days)
-                                    </h3>
-                                    {loading ? (
-                                        <p>Loading...</p>
-                                    ) : (
-                                        <Line 
-                                            data={createFactorySalesChartData(factoryData, factoryData.name)} 
-                                            options={lineChartOptions} 
-                                        />
-                                    )}
-                                </div>
-                            </React.Fragment>
-                        ))}
-                    </div>
-                )}
-
-                {/* Factory-specific Production vs Sales Combined Charts */}
-                {user?.role === 'headquarters' && analyticsData?.factories && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
-                            <div key={`combined-${factoryId}`} className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold mb-4">
-                                    {factoryData.name} - Production vs Sales Trend (30 Days)
-                                </h3>
-                                {loading ? (
-                                    <p>Loading...</p>
-                                ) : (
-                                    <Line 
-                                        data={{
-                                            labels: factoryData?.dates || [],
-                                            datasets: [
-                                                {
-                                                    label: 'Production',
-                                                    data: factoryData?.production || [],
-                                                    borderColor: 'rgb(26,53,91)',
-                                                    backgroundColor: 'rgba(26,53,91,0.1)',
-                                                    tension: 0.1,
-                                                },
-                                                {
-                                                    label: 'Sales',
-                                                    data: factoryData?.sales || [],
-                                                    borderColor: 'rgb(255,199,44)',
-                                                    backgroundColor: 'rgba(255,199,44,0.1)',
-                                                    tension: 0.1,
-                                                },
-                                            ],
-                                        }} 
-                                        options={lineChartOptions} 
-                                    />
-                                )}
+                    <div className="space-y-6">
+                        <div className="bg-gray-50 rounded-lg p-6">
+                            <h2 className="text-xl font-bold text-gray-800 mb-6">
+                                Factory-wise Production vs Sales Daily Trends (Last 30 Days)
+                            </h2>
+                            <div className="grid grid-cols-1 gap-8">
+                                {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
+                                    <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-semibold text-gray-800">
+                                                {factoryData.name} - Daily Production vs Sales Trend
+                                            </h3>
+                                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                <div className="flex items-center">
+                                                    <div className="w-4 h-4 bg-blue-600 rounded-full mr-2"></div>
+                                                    <span>Production</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                    <span>Sales</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {loading ? (
+                                            <div className="flex items-center justify-center h-64">
+                                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                            </div>
+                                        ) : (
+                                            <div className="h-80">
+                                                <Line 
+                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name)} 
+                                                    options={dailyTrendChartOptions} 
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        </div>
                     </div>
                 )}
 
                 {/* Single factory view - show combined production and sales */}
                 {user?.role !== 'headquarters' && (
                     <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-lg font-semibold mb-4">Production & Sales Trend (30 Days)</h3>
+                        <h3 className="text-lg font-semibold mb-4">Production & Sales Daily Trend (Last 30 Days)</h3>
                         {loading ? (
-                            <p>Loading...</p>
+                            <div className="flex items-center justify-center h-64">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                            </div>
                         ) : (
-                            <Line 
-                                data={{
-                                    labels: analyticsData?.dates || [],
-                                    datasets: [
-                                        {
-                                            label: 'Production',
-                                            data: analyticsData?.production || [],
-                                            borderColor: 'rgb(26,53,91)',
-                                            backgroundColor: 'rgba(26,53,91,0.1)',
-                                            tension: 0.1,
-                                        },
-                                        {
-                                            label: 'Sales',
-                                            data: analyticsData?.sales || [],
-                                            borderColor: 'rgb(255,199,44)',
-                                            backgroundColor: 'rgba(255,199,44,0.1)',
-                                            tension: 0.1,
-                                        },
-                                    ],
-                                }} 
-                                options={lineChartOptions} 
-                            />
+                            <div className="h-80">
+                                <Line 
+                                    data={{
+                                        labels: analyticsData?.dates || [],
+                                        datasets: [
+                                            {
+                                                label: 'Production',
+                                                data: analyticsData?.production || [],
+                                                borderColor: 'rgb(26,53,91)',
+                                                backgroundColor: 'rgba(26,53,91,0.1)',
+                                                tension: 0.1,
+                                                fill: false,
+                                                pointBackgroundColor: 'rgb(26,53,91)',
+                                                pointBorderColor: 'rgb(26,53,91)',
+                                                pointRadius: 4,
+                                                pointHoverRadius: 6,
+                                            },
+                                            {
+                                                label: 'Sales',
+                                                data: analyticsData?.sales || [],
+                                                borderColor: 'rgb(255,199,44)',
+                                                backgroundColor: 'rgba(255,199,44,0.1)',
+                                                tension: 0.1,
+                                                fill: false,
+                                                pointBackgroundColor: 'rgb(255,199,44)',
+                                                pointBorderColor: 'rgb(255,199,44)',
+                                                pointRadius: 4,
+                                                pointHoverRadius: 6,
+                                            },
+                                        ],
+                                    }} 
+                                    options={dailyTrendChartOptions} 
+                                />
+                            </div>
                         )}
                     </div>
                 )}
