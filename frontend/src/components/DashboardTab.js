@@ -104,19 +104,6 @@ const DashboardTab = () => {
         };
     };
 
-    const downtimeChartData = {
-        labels: analyticsData?.dates || [],
-        datasets: [
-            {
-                label: 'Downtime Hours',
-                data: analyticsData?.downtime || [],
-                backgroundColor: 'rgba(239,68,68,0.6)',
-                borderColor: 'rgb(239,68,68)',
-                borderWidth: 1,
-            },
-        ],
-    };
-
     const factoryProductionData = {
         labels: Object.values(comparisonData || {}).map((f) => f.name),
         datasets: [
@@ -139,6 +126,19 @@ const DashboardTab = () => {
                 backgroundColor: 'rgba(255,199,44,0.6)',
                 // Add SKU/unit data for tooltips
                 skuUnit: Object.values(comparisonData || {}).map((f) => f.sku_unit || f.unit || 'units'),
+            },
+        ],
+    };
+
+    const factoryDowntimeData = {
+        labels: Object.values(comparisonData || {}).map((f) => f.name),
+        datasets: [
+            {
+                label: 'Downtime Hours',
+                data: Object.values(comparisonData || {}).map((f) => f.downtime || 0),
+                backgroundColor: 'rgba(239,68,68,0.6)',
+                borderColor: 'rgb(239,68,68)',
+                borderWidth: 1,
             },
         ],
     };
@@ -190,6 +190,20 @@ const DashboardTab = () => {
         },
     };
 
+    const downtimeBarChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false,
+            },
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+            },
+        },
+    };
+
     const lineChartOptions = {
         responsive: true,
         plugins: {
@@ -206,18 +220,12 @@ const DashboardTab = () => {
 
     return (
         <div className="space-y-8">
-            {/* Summary Cards - Removed Total Production and Sales */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Summary Cards - Only Total Downtime */}
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm text-gray-500 mb-2">Total Downtime</h3>
                     <p className="text-3xl font-bold text-red-600">
                         {dashboardData?.total_downtime?.toLocaleString() || 0}h
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm text-gray-500 mb-2">Total Stock</h3>
-                    <p className="text-3xl font-bold text-green-600">
-                        {dashboardData?.total_stock?.toLocaleString() || 0}
                     </p>
                 </div>
             </div>
@@ -234,16 +242,6 @@ const DashboardTab = () => {
 
             {/* Charts */}
             <div className="space-y-6">
-                {/* Downtime Chart */}
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Downtime Analysis (30 Days)</h3>
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : (
-                        <Bar data={downtimeChartData} options={{ responsive: true }} />
-                    )}
-                </div>
-
                 {/* Factory-specific Production and Sales Charts */}
                 {user?.role === 'headquarters' && analyticsData?.factories && (
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -315,7 +313,7 @@ const DashboardTab = () => {
 
                 {/* Headquarters-only comparison charts */}
                 {user?.role === 'headquarters' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Factory Production Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
@@ -328,6 +326,14 @@ const DashboardTab = () => {
                             <h3 className="text-lg font-semibold mb-4">Factory Sales Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
                                 <Bar data={factorySalesData} options={barChartOptions}/>
+                            ) : (
+                                <p>No data available</p>
+                            )}
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-6">
+                            <h3 className="text-lg font-semibold mb-4">Downtime Comparison</h3>
+                            {Object.keys(comparisonData || {}).length > 0 ? (
+                                <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
                             ) : (
                                 <p>No data available</p>
                             )}
