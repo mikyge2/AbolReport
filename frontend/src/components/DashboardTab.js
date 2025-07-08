@@ -2,8 +2,33 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement,
+} from 'chart.js';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+
+// Register Chart.js components
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    Title,
+    Tooltip,
+    Legend,
+    ArcElement
+);
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -74,35 +99,43 @@ const DashboardTab = () => {
 
     // Enhanced function to create factory-specific production vs sales chart
     const createFactoryProductionVsSalesChart = (factoryData, factoryName) => {
-        return {
+        console.log('Factory Data:', factoryData); // Debug log
+        console.log('Factory Name:', factoryName); // Debug log
+        
+        const chartData = {
             labels: factoryData?.dates || [],
             datasets: [
                 {
                     label: 'Production',
                     data: factoryData?.production || [],
-                    borderColor: 'rgb(26,53,91)',
+                    borderColor: '#1a355b',
                     backgroundColor: 'rgba(26,53,91,0.1)',
+                    borderWidth: 2,
                     tension: 0.1,
                     fill: false,
-                    pointBackgroundColor: 'rgb(26,53,91)',
-                    pointBorderColor: 'rgb(26,53,91)',
+                    pointBackgroundColor: '#1a355b',
+                    pointBorderColor: '#1a355b',
                     pointRadius: 4,
                     pointHoverRadius: 6,
                 },
                 {
                     label: 'Sales',
                     data: factoryData?.sales || [],
-                    borderColor: 'rgb(255,199,44)',
+                    borderColor: '#ffc72c',
                     backgroundColor: 'rgba(255,199,44,0.1)',
+                    borderWidth: 2,
                     tension: 0.1,
                     fill: false,
-                    pointBackgroundColor: 'rgb(255,199,44)',
-                    pointBorderColor: 'rgb(255,199,44)',
+                    pointBackgroundColor: '#ffc72c',
+                    pointBorderColor: '#ffc72c',
                     pointRadius: 4,
                     pointHoverRadius: 6,
                 },
             ],
         };
+        
+        console.log('Chart Data:', chartData); // Debug log
+        return chartData;
     };
 
     // Enhanced line chart options for daily trends
@@ -134,7 +167,7 @@ const DashboardTab = () => {
                     label: function(context) {
                         const dataset = context.dataset;
                         const value = context.parsed.y;
-                        return `${dataset.label}: ${value.toLocaleString()} units`;
+                        return `${dataset.label}: ${value?.toLocaleString() || 0} units`;
                     }
                 }
             }
@@ -172,13 +205,14 @@ const DashboardTab = () => {
                 }
             },
         },
-        interaction: {
-            mode: 'index',
-            intersect: false,
-        },
-        hover: {
-            mode: 'index',
-            intersect: false,
+        elements: {
+            line: {
+                borderWidth: 2
+            },
+            point: {
+                radius: 4,
+                hoverRadius: 6
+            }
         }
     };
 
@@ -319,44 +353,72 @@ const DashboardTab = () => {
             {/* Charts */}
             <div className="space-y-6">
                 {/* Factory-specific Production vs Sales Daily Trend Charts */}
-                {user?.role === 'headquarters' && analyticsData?.factories && (
+                {user?.role === 'headquarters' && analyticsData?.factories && Object.keys(analyticsData.factories).length > 0 && (
                     <div className="space-y-6">
                         <div className="bg-gray-50 rounded-lg p-6">
                             <h2 className="text-xl font-bold text-gray-800 mb-6">
                                 Factory-wise Production vs Sales Daily Trends (Last 30 Days)
                             </h2>
                             <div className="grid grid-cols-1 gap-8">
-                                {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
-                                    <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg font-semibold text-gray-800">
-                                                {factoryData.name} - Daily Production vs Sales Trend
-                                            </h3>
-                                            <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                                <div className="flex items-center">
-                                                    <div className="w-4 h-4 bg-blue-600 rounded-full mr-2"></div>
-                                                    <span>Production</span>
+                                {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => {
+                                    console.log(`Rendering factory ${factoryId}:`, factoryData); // Debug log
+                                    return (
+                                        <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-lg font-semibold text-gray-800">
+                                                    {factoryData.name || `Factory ${factoryId}`} - Daily Production vs Sales Trend
+                                                </h3>
+                                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                    <div className="flex items-center">
+                                                        <div className="w-4 h-4 bg-blue-600 rounded-full mr-2"></div>
+                                                        <span>Production</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                        <span>Sales</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center">
-                                                    <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                                                    <span>Sales</span>
+                                            </div>
+                                            {loading ? (
+                                                <div className="flex items-center justify-center h-80">
+                                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                                                 </div>
+                                            ) : (
+                                                <div className="h-80 w-full">
+                                                    <Line 
+                                                        data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)} 
+                                                        options={dailyTrendChartOptions} 
+                                                    />
+                                                </div>
+                                            )}
+                                            {/* Debug info */}
+                                            <div className="mt-4 text-xs text-gray-500">
+                                                <p>Data points: {factoryData?.dates?.length || 0} days</p>
+                                                <p>Production data: {factoryData?.production?.length || 0} points</p>
+                                                <p>Sales data: {factoryData?.sales?.length || 0} points</p>
                                             </div>
                                         </div>
-                                        {loading ? (
-                                            <div className="flex items-center justify-center h-64">
-                                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                                            </div>
-                                        ) : (
-                                            <div className="h-80">
-                                                <Line 
-                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name)} 
-                                                    options={dailyTrendChartOptions} 
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Fallback message if no factory data */}
+                {user?.role === 'headquarters' && (!analyticsData?.factories || Object.keys(analyticsData.factories).length === 0) && !loading && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0">
+                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                            </div>
+                            <div className="ml-3">
+                                <h3 className="text-sm font-medium text-yellow-800">No Factory Data Available</h3>
+                                <p className="text-sm text-yellow-700 mt-1">
+                                    No factory analytics data found. Please ensure your API is returning factory data in the expected format.
+                                </p>
                             </div>
                         </div>
                     </div>
