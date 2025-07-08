@@ -270,63 +270,6 @@ async def get_daily_logs(
     logs = await db.daily_logs.find(query).to_list(1000)
     return [DailyLog(**log) for log in logs]
 
-@api_router.get("/dashboard-summary")
-async def get_dashboard_summary(current_user: User = Depends(get_current_user)):
-    # Get recent logs (last 30 days)
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    
-    query = {"date": {"$gte": thirty_days_ago}}
-    if current_user.role == "factory_employer":
-        query["factory_id"] = current_user.factory_id
-    
-    logs = await db.daily_logs.find(query).to_list(1000)
-    
-    # Calculate summaries
-    total_production = 0
-    total_sales = 0
-    total_downtime = 0
-    total_stock = 0
-    
-    factory_summaries = {}
-    
-    for log in logs:
-        factory_id = log["factory_id"]
-        if factory_id not in factory_summaries:
-            factory_summaries[factory_id] = {
-                "name": FACTORIES.get(factory_id, {}).get("name", factory_id),
-                "production": 0,
-                "sales": 0,
-                "downtime": 0,
-                "stock": 0
-            }
-        
-        # Production
-        production = sum(log["production_data"].values())
-        total_production += production
-        factory_summaries[factory_id]["production"] += production
-        
-        # Sales
-        sales = sum(item["amount"] for item in log["sales_data"].values())
-        total_sales += sales
-        factory_summaries[factory_id]["sales"] += sales
-        
-        # Downtime
-        total_downtime += log["downtime_hours"]
-        factory_summaries[factory_id]["downtime"] += log["downtime_hours"]
-        
-        # Stock
-        stock = sum(log["stock_data"].values())
-        total_stock += stock
-        factory_summaries[factory_id]["stock"] += stock
-    
-    return {
-        "total_production": total_production,
-        "total_sales": total_sales,
-        "total_downtime": total_downtime,
-        "total_stock": total_stock,
-        "factory_summaries": factory_summaries
-    }
-
 @api_router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return UserResponse(
@@ -527,41 +470,120 @@ async def get_analytics_trends(
     
     logs = await db.daily_logs.find(query).sort("date", 1).to_list(1000)
     
-    # Prepare trend data
-    trends = {
-        "production": [],
-        "sales": [],
-        "downtime": [],
-        "stock": [],
-        "dates": []
-    }
+    # For single factory (factory_employer or specific factory requested)
+    if current_user.role == "factory_employer" or factory_id:
+        # Prepare single factory trend data
+        trends = {
+            "production": [],
+            "sales": [],
+            "downtime": [],
+            "stock": [],
+            "dates": []
+        }
+        
+        # Group by date
+        daily_data = {}
+        for log in logs:
+            date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
+            if date_str not in daily_data:
+                daily_data[date_str] = {
+                    "production": 0,
+                    "sales": 0,
+                    "downtime": 0,
+                    "stock": 0
+                }
+            
+            daily_data[date_str]["production"] += sum(log["production_data"].values())
+            daily_data[date_str]["sales"] += sum(item["amount"] for item in log["sales_data"].values())
+            daily_data[date_str]["downtime"] += log["downtime_hours"]
+            daily_data[date_str]["stock"] += sum(log["stock_data"].values())
+        
+        # Sort by date and prepare final data
+        for date_str in sorted(daily_data.keys()):
+            trends["dates"].append(date_str)
+            trends["production"].append(daily_data[date_str]["production"])
+            trends["sales"].append(daily_data[date_str]["sales"])
+            trends["downtime"].append(daily_data[date_str]["downtime"])
+            trends["stock"].append(daily_data[date_str]["stock"])
+        
+        return trends
     
-    # Group by date
-    daily_data = {}
-    for log in logs:
-        date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
-        if date_str not in daily_data:
-            daily_data[date_str] = {
-                "production": 0,
-                "sales": 0,
-                "downtime": 0,
-                "stock": 0
+    # For headquarters - return factory-specific data
+    else:
+        # Prepare factory-specific trend data
+        factory_trends = {
+            "factories": {},
+            "dates": [],
+            "downtime": [],
+            "stock": []
+        }
+        
+        # Get all unique dates
+        all_dates = set()
+        for log in logs:
+            date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
+            all_dates.add(date_str)
+        
+        factory_trends["dates"] = sorted(list(all_dates))
+        
+        # Initialize factory data
+        for factory_id, factory_info in FACTORIES.items():
+            factory_trends["factories"][factory_id] = {
+                "name": factory_info["name"],
+                "dates": factory_trends["dates"].copy(),
+                "production": [0] * len(factory_trends["dates"]),
+                "sales": [0] * len(factory_trends["dates"])
             }
         
-        daily_data[date_str]["production"] += sum(log["production_data"].values())
-        daily_data[date_str]["sales"] += sum(item["amount"] for item in log["sales_data"].values())
-        daily_data[date_str]["downtime"] += log["downtime_hours"]
-        daily_data[date_str]["stock"] += sum(log["stock_data"].values())
-    
-    # Sort by date and prepare final data
-    for date_str in sorted(daily_data.keys()):
-        trends["dates"].append(date_str)
-        trends["production"].append(daily_data[date_str]["production"])
-        trends["sales"].append(daily_data[date_str]["sales"])
-        trends["downtime"].append(daily_data[date_str]["downtime"])
-        trends["stock"].append(daily_data[date_str]["stock"])
-    
-    return trends
+        # Initialize overall downtime and stock arrays
+        factory_trends["downtime"] = [0] * len(factory_trends["dates"])
+        factory_trends["stock"] = [0] * len(factory_trends["dates"])
+        
+        # Group logs by factory and date
+        factory_daily_data = {}
+        overall_daily_data = {}
+        
+        for log in logs:
+            date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
+            factory_id = log["factory_id"]
+            
+            # Factory-specific data
+            if factory_id not in factory_daily_data:
+                factory_daily_data[factory_id] = {}
+            
+            if date_str not in factory_daily_data[factory_id]:
+                factory_daily_data[factory_id][date_str] = {
+                    "production": 0,
+                    "sales": 0
+                }
+            
+            factory_daily_data[factory_id][date_str]["production"] += sum(log["production_data"].values())
+            factory_daily_data[factory_id][date_str]["sales"] += sum(item["amount"] for item in log["sales_data"].values())
+            
+            # Overall data for downtime and stock
+            if date_str not in overall_daily_data:
+                overall_daily_data[date_str] = {
+                    "downtime": 0,
+                    "stock": 0
+                }
+            
+            overall_daily_data[date_str]["downtime"] += log["downtime_hours"]
+            overall_daily_data[date_str]["stock"] += sum(log["stock_data"].values())
+        
+        # Fill in the factory trend data
+        for factory_id, factory_info in FACTORIES.items():
+            for i, date_str in enumerate(factory_trends["dates"]):
+                if factory_id in factory_daily_data and date_str in factory_daily_data[factory_id]:
+                    factory_trends["factories"][factory_id]["production"][i] = factory_daily_data[factory_id][date_str]["production"]
+                    factory_trends["factories"][factory_id]["sales"][i] = factory_daily_data[factory_id][date_str]["sales"]
+        
+        # Fill in overall downtime and stock data
+        for i, date_str in enumerate(factory_trends["dates"]):
+            if date_str in overall_daily_data:
+                factory_trends["downtime"][i] = overall_daily_data[date_str]["downtime"]
+                factory_trends["stock"][i] = overall_daily_data[date_str]["stock"]
+        
+        return factory_trends
 
 @api_router.get("/analytics/factory-comparison")
 async def get_factory_comparison(
@@ -581,21 +603,80 @@ async def get_factory_comparison(
     for factory_id, factory_info in FACTORIES.items():
         factory_logs = [log for log in logs if log["factory_id"] == factory_id]
         
+        total_production = sum(sum(log["production_data"].values()) for log in factory_logs)
+        total_sales = sum(sum(item["amount"] for item in log["sales_data"].values()) for log in factory_logs)
+        total_revenue = sum(sum(item["amount"] * item["unit_price"] for item in log["sales_data"].values()) for log in factory_logs)
+        total_downtime = sum(log["downtime_hours"] for log in factory_logs)
+        
         factory_data[factory_id] = {
             "name": factory_info["name"],
-            "production": sum(sum(log["production_data"].values()) for log in factory_logs),
-            "sales": sum(sum(item["amount"] for item in log["sales_data"].values()) for log in factory_logs),
-            "revenue": sum(sum(item["amount"] * item["unit_price"] for item in log["sales_data"].values()) for log in factory_logs),
-            "downtime": sum(log["downtime_hours"] for log in factory_logs),
-            "efficiency": 0  # Will calculate efficiency percentage
+            "production": total_production,
+            "sales": total_sales,
+            "revenue": total_revenue,
+            "downtime": total_downtime,
+            "efficiency": 0,  # Will calculate efficiency percentage
+            "sku_unit": factory_info["sku_unit"]  # Add SKU unit for tooltips
         }
         
         # Calculate efficiency (production vs planned - using production as baseline)
         if factory_data[factory_id]["production"] > 0:
             planned_production = factory_data[factory_id]["production"] * 1.2  # Assume 20% more was planned
             factory_data[factory_id]["efficiency"] = (factory_data[factory_id]["production"] / planned_production) * 100
+        else:
+            factory_data[factory_id]["efficiency"] = 0
     
     return factory_data
+
+@api_router.get("/dashboard-summary")
+async def get_dashboard_summary(current_user: User = Depends(get_current_user)):
+    # Get recent logs (last 30 days)
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    query = {"date": {"$gte": thirty_days_ago}}
+    if current_user.role == "factory_employer":
+        query["factory_id"] = current_user.factory_id
+    
+    logs = await db.daily_logs.find(query).to_list(1000)
+    
+    # Calculate summaries - removed total_production and total_sales
+    total_downtime = 0
+    total_stock = 0
+    
+    factory_summaries = {}
+    
+    for log in logs:
+        factory_id = log["factory_id"]
+        if factory_id not in factory_summaries:
+            factory_summaries[factory_id] = {
+                "name": FACTORIES.get(factory_id, {}).get("name", factory_id),
+                "production": 0,
+                "sales": 0,
+                "downtime": 0,
+                "stock": 0
+            }
+        
+        # Production
+        production = sum(log["production_data"].values())
+        factory_summaries[factory_id]["production"] += production
+        
+        # Sales
+        sales = sum(item["amount"] for item in log["sales_data"].values())
+        factory_summaries[factory_id]["sales"] += sales
+        
+        # Downtime
+        total_downtime += log["downtime_hours"]
+        factory_summaries[factory_id]["downtime"] += log["downtime_hours"]
+        
+        # Stock
+        stock = sum(log["stock_data"].values())
+        total_stock += stock
+        factory_summaries[factory_id]["stock"] += stock
+    
+    return {
+        "total_downtime": total_downtime,
+        "total_stock": total_stock,
+        "factory_summaries": factory_summaries
+    }
 
 # Include the router in the main app
 app.include_router(api_router)

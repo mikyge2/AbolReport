@@ -72,24 +72,36 @@ const DashboardTab = () => {
         }
     };
 
-    const productionChartData = {
-        labels: analyticsData?.dates || [],
-        datasets: [
-            {
-                label: 'Production',
-                data: analyticsData?.production || [],
-                borderColor: 'rgb(26,53,91)',
-                backgroundColor: 'rgba(26,53,91,0.1)',
-                tension: 0.1,
-            },
-            {
-                label: 'Sales',
-                data: analyticsData?.sales || [],
-                borderColor: 'rgb(255,199,44)',
-                backgroundColor: 'rgba(255,199,44,0.1)',
-                tension: 0.1,
-            },
-        ],
+    // Create separate production chart data for each factory
+    const createFactoryProductionChartData = (factoryData, factoryName) => {
+        return {
+            labels: factoryData?.dates || [],
+            datasets: [
+                {
+                    label: 'Production',
+                    data: factoryData?.production || [],
+                    borderColor: 'rgb(26,53,91)',
+                    backgroundColor: 'rgba(26,53,91,0.1)',
+                    tension: 0.1,
+                },
+            ],
+        };
+    };
+
+    // Create separate sales chart data for each factory
+    const createFactorySalesChartData = (factoryData, factoryName) => {
+        return {
+            labels: factoryData?.dates || [],
+            datasets: [
+                {
+                    label: 'Sales',
+                    data: factoryData?.sales || [],
+                    borderColor: 'rgb(255,199,44)',
+                    backgroundColor: 'rgba(255,199,44,0.1)',
+                    tension: 0.1,
+                },
+            ],
+        };
     };
 
     const downtimeChartData = {
@@ -112,6 +124,8 @@ const DashboardTab = () => {
                 label: 'Production',
                 data: Object.values(comparisonData || {}).map((f) => f.production),
                 backgroundColor: 'rgba(26,53,91,0.6)',
+                // Add SKU/unit data for tooltips
+                skuUnit: Object.values(comparisonData || {}).map((f) => f.sku_unit || f.unit || 'units'),
             },
         ],
     };
@@ -123,10 +137,11 @@ const DashboardTab = () => {
                 label: 'Sales',
                 data: Object.values(comparisonData || {}).map((f) => f.sales),
                 backgroundColor: 'rgba(255,199,44,0.6)',
+                // Add SKU/unit data for tooltips
+                skuUnit: Object.values(comparisonData || {}).map((f) => f.sku_unit || f.unit || 'units'),
             },
         ],
     };
-
 
     const efficiencyData = {
         labels: Object.values(comparisonData || {}).map((f) => f.name),
@@ -155,7 +170,31 @@ const DashboardTab = () => {
         responsive: true,
         plugins: {
             legend: {
-                display: false, // Hide legend since there's only one dataset
+                display: false,
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const dataset = context.dataset;
+                        const value = context.parsed.y;
+                        const skuUnit = dataset.skuUnit ? dataset.skuUnit[context.dataIndex] : 'units';
+                        return `${dataset.label}: ${value.toLocaleString()} ${skuUnit}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+            },
+        },
+    };
+
+    const lineChartOptions = {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: true,
             },
         },
         scales: {
@@ -165,23 +204,10 @@ const DashboardTab = () => {
         },
     };
 
-
     return (
         <div className="space-y-8">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm text-gray-500 mb-2">Total Production</h3>
-                    <p className="text-3xl font-bold text-primary">
-                        {dashboardData?.total_production?.toLocaleString() || 0}
-                    </p>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm text-gray-500 mb-2">Total Sales</h3>
-                    <p className="text-3xl font-bold text-secondary">
-                        {dashboardData?.total_sales?.toLocaleString() || 0}
-                    </p>
-                </div>
+            {/* Summary Cards - Removed Total Production and Sales */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-sm text-gray-500 mb-2">Total Downtime</h3>
                     <p className="text-3xl font-bold text-red-600">
@@ -207,15 +233,8 @@ const DashboardTab = () => {
             </div>
 
             {/* Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-lg font-semibold mb-4">Production & Sales Trend (30 Days)</h3>
-                    {loading ? (
-                        <p>Loading...</p>
-                    ) : (
-                        <Line data={productionChartData} options={{ responsive: true }} />
-                    )}
-                </div>
+            <div className="space-y-6">
+                {/* Downtime Chart */}
                 <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Downtime Analysis (30 Days)</h3>
                     {loading ? (
@@ -224,8 +243,79 @@ const DashboardTab = () => {
                         <Bar data={downtimeChartData} options={{ responsive: true }} />
                     )}
                 </div>
+
+                {/* Factory-specific Production and Sales Charts */}
+                {user?.role === 'headquarters' && analyticsData?.factories && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => (
+                            <React.Fragment key={factoryId}>
+                                <div className="bg-white rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold mb-4">
+                                        {factoryData.name} - Production Trend (30 Days)
+                                    </h3>
+                                    {loading ? (
+                                        <p>Loading...</p>
+                                    ) : (
+                                        <Line 
+                                            data={createFactoryProductionChartData(factoryData, factoryData.name)} 
+                                            options={lineChartOptions} 
+                                        />
+                                    )}
+                                </div>
+                                <div className="bg-white rounded-lg shadow p-6">
+                                    <h3 className="text-lg font-semibold mb-4">
+                                        {factoryData.name} - Sales Trend (30 Days)
+                                    </h3>
+                                    {loading ? (
+                                        <p>Loading...</p>
+                                    ) : (
+                                        <Line 
+                                            data={createFactorySalesChartData(factoryData, factoryData.name)} 
+                                            options={lineChartOptions} 
+                                        />
+                                    )}
+                                </div>
+                            </React.Fragment>
+                        ))}
+                    </div>
+                )}
+
+                {/* Single factory view - show combined production and sales */}
+                {user?.role !== 'headquarters' && (
+                    <div className="bg-white rounded-lg shadow p-6">
+                        <h3 className="text-lg font-semibold mb-4">Production & Sales Trend (30 Days)</h3>
+                        {loading ? (
+                            <p>Loading...</p>
+                        ) : (
+                            <Line 
+                                data={{
+                                    labels: analyticsData?.dates || [],
+                                    datasets: [
+                                        {
+                                            label: 'Production',
+                                            data: analyticsData?.production || [],
+                                            borderColor: 'rgb(26,53,91)',
+                                            backgroundColor: 'rgba(26,53,91,0.1)',
+                                            tension: 0.1,
+                                        },
+                                        {
+                                            label: 'Sales',
+                                            data: analyticsData?.sales || [],
+                                            borderColor: 'rgb(255,199,44)',
+                                            backgroundColor: 'rgba(255,199,44,0.1)',
+                                            tension: 0.1,
+                                        },
+                                    ],
+                                }} 
+                                options={lineChartOptions} 
+                            />
+                        )}
+                    </div>
+                )}
+
+                {/* Headquarters-only comparison charts */}
                 {user?.role === 'headquarters' && (
-                    <>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Factory Production Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
@@ -258,7 +348,7 @@ const DashboardTab = () => {
                                 <p>No data available</p>
                             )}
                         </div>
-                    </>
+                    </div>
                 )}
             </div>
         </div>
