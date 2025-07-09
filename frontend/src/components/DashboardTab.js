@@ -564,7 +564,7 @@ const DashboardTab = () => {
                         {user?.role === 'headquarters' ? 'All Factories' : 'Your Factory'} - Production vs Sales Daily Trends (Last 30 Days)
                     </h2>
                     
-                    {Object.keys(factoriesToDisplay).length > 0 ? (
+                    {true ? (
                         <div className="grid grid-cols-1 gap-8">
                             {Object.entries(factoriesToDisplay).map(([factoryId, factoryData]) => {
                                 console.log(`Rendering factory ${factoryId}:`, factoryData);

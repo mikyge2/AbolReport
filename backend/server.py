@@ -572,7 +572,7 @@ async def get_analytics_trends(
 
             
             # Overall data for downtime and stock
-            if date_str not in overall_daily_data:
+            if date_str not in overall_daily{true ? (_data:
                 overall_daily_data[date_str] = {
                     "downtime": 0,
                     "stock": 0
