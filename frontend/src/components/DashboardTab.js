@@ -173,26 +173,26 @@ const DashboardTab = () => {
                     data: factoryData?.production || [],
                     borderColor: '#1a355b',
                     backgroundColor: 'rgba(26,53,91,0.1)',
-                    borderWidth: 2,
+                    borderWidth: 3,
                     tension: 0.1,
                     fill: false,
                     pointBackgroundColor: '#1a355b',
                     pointBorderColor: '#1a355b',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
                 },
                 {
                     label: 'Sales',
                     data: factoryData?.sales || [],
                     borderColor: '#ffc72c',
                     backgroundColor: 'rgba(255,199,44,0.1)',
-                    borderWidth: 2,
+                    borderWidth: 3,
                     tension: 0.1,
                     fill: false,
                     pointBackgroundColor: '#ffc72c',
                     pointBorderColor: '#ffc72c',
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
                 },
             ],
         };
@@ -205,6 +205,10 @@ const DashboardTab = () => {
     const dailyTrendChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+            mode: 'index',
+            intersect: false,
+        },
         plugins: {
             legend: {
                 display: true,
@@ -213,7 +217,7 @@ const DashboardTab = () => {
                     usePointStyle: true,
                     padding: 20,
                     font: {
-                        size: 12,
+                        size: 14,
                         weight: 'bold'
                     }
                 }
@@ -226,6 +230,7 @@ const DashboardTab = () => {
                 bodyColor: 'white',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
                 borderWidth: 1,
+                padding: 10,
                 callbacks: {
                     label: function (context) {
                         const dataset = context.dataset;
@@ -242,13 +247,18 @@ const DashboardTab = () => {
                     display: true,
                     text: 'Date',
                     font: {
-                        size: 12,
+                        size: 14,
                         weight: 'bold'
                     }
                 },
                 grid: {
                     display: true,
                     color: 'rgba(0, 0, 0, 0.1)'
+                },
+                ticks: {
+                    font: {
+                        size: 12
+                    }
                 }
             },
             y: {
@@ -258,24 +268,57 @@ const DashboardTab = () => {
                     display: true,
                     text: 'Units',
                     font: {
-                        size: 12,
+                        size: 14,
                         weight: 'bold'
                     }
                 },
                 grid: {
                     display: true,
                     color: 'rgba(0, 0, 0, 0.1)'
+                },
+                ticks: {
+                    font: {
+                        size: 12
+                    }
                 }
             },
         },
         elements: {
             line: {
-                borderWidth: 2
+                borderWidth: 3
             },
             point: {
-                radius: 4,
-                hoverRadius: 6
+                radius: 5,
+                hoverRadius: 7
             }
+        }
+    };
+
+    // Function to get factories data to display based on user role
+    const getFactoriesDataToDisplay = () => {
+        if (user?.role === 'headquarters') {
+            // Headquarters can see all factories
+            return analyticsData?.factories || {};
+        } else {
+            // Factory user can only see their own factory
+            if (user?.factory_id && analyticsData?.factories) {
+                const userFactory = analyticsData.factories[user.factory_id];
+                if (userFactory) {
+                    return { [user.factory_id]: userFactory };
+                }
+            }
+            // If user has single factory data format (non-headquarters response)
+            if (analyticsData?.dates && analyticsData?.production && analyticsData?.sales) {
+                return {
+                    [user?.factory_id || 'current']: {
+                        name: user?.factory_name || 'Current Factory',
+                        dates: analyticsData.dates,
+                        production: analyticsData.production,
+                        sales: analyticsData.sales
+                    }
+                };
+            }
+            return {};
         }
     };
 
@@ -377,20 +420,6 @@ const DashboardTab = () => {
         },
     };
 
-    const lineChartOptions = {
-        responsive: true,
-        plugins: {
-            legend: {
-                display: true,
-            },
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-            },
-        },
-    };
-
     // Show loading state
     if (loading) {
         return (
@@ -428,27 +457,90 @@ const DashboardTab = () => {
         );
     }
 
+    // Get the factories data to display based on user role
+    const factoriesToDisplay = getFactoriesDataToDisplay();
+
     return (
         <div className="space-y-8">
-            {/* Debug Information */}
-            <div className="bg-gray-100 rounded-lg p-4 text-sm">
-                <h4 className="font-medium mb-2">Debug Information:</h4>
-                <div className="space-y-1">
-                    <p>User Role: {user?.role}</p>
-                    <p>User Factory ID: {user?.factory_id || 'N/A'}</p>
-                    <p>Analytics Data Available: {Object.keys(analyticsData).length > 0 ? 'Yes' : 'No'}</p>
-                    <p>Factories Data: {analyticsData?.factories ? Object.keys(analyticsData.factories).length : 0} factories</p>
-                    <p>Comparison Data: {Object.keys(comparisonData).length} factories</p>
+            {/* Header */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-2xl font-bold text-gray-900">Factory Dashboard</h1>
+                        <p className="text-gray-600 mt-1">
+                            {user?.role === 'headquarters' 
+                                ? 'Overview of all factory operations' 
+                                : 'Your factory performance overview'
+                            }
+                        </p>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <span className="text-sm text-gray-500">
+                            Role: <span className="font-medium">{user?.role}</span>
+                        </span>
+                        {user?.factory_id && (
+                            <span className="text-sm text-gray-500">
+                                Factory: <span className="font-medium">{user.factory_id}</span>
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
 
-            {/* Summary Cards - Only Total Downtime */}
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
-                <div className="bg-white rounded-lg shadow p-6">
-                    <h3 className="text-sm text-gray-500 mb-2">Total Downtime</h3>
-                    <p className="text-3xl font-bold text-red-600">
-                        {dashboardData?.total_downtime?.toLocaleString() || 0}h
-                    </p>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-gray-500">Total Downtime</p>
+                            <p className="text-2xl font-bold text-red-600">
+                                {dashboardData?.total_downtime?.toLocaleString() || 0}h
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-gray-500">Active Factories</p>
+                            <p className="text-2xl font-bold text-blue-600">
+                                {Object.keys(factoriesToDisplay).length}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div className="ml-4">
+                            <p className="text-sm text-gray-500">Total Stock</p>
+                            <p className="text-2xl font-bold text-green-600">
+                                {dashboardData?.total_stock?.toLocaleString() || 0}
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -456,151 +548,132 @@ const DashboardTab = () => {
             <div className="flex justify-end">
                 <button
                     onClick={exportToExcel}
-                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md"
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors duration-200 flex items-center space-x-2"
                 >
-                    Export Excel Report
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Export Excel Report</span>
                 </button>
             </div>
 
-            {/* Charts */}
+            {/* Production vs Sales Charts - Separate chart for each factory */}
             <div className="space-y-6">
-                {/* Factory-specific Production vs Sales Daily Trend Charts */}
-                {user?.role === 'headquarters' && analyticsData?.factories && Object.keys(analyticsData.factories).length > 0 && (
-                    <div className="space-y-6">
-                        <div className="bg-gray-50 rounded-lg p-6">
-                            <h2 className="text-xl font-bold text-gray-800 mb-6">
-                                Factory-wise Production vs Sales Daily Trends (Last 30 Days)
-                            </h2>
-                            <div className="grid grid-cols-1 gap-8">
-                                {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => {
-                                    console.log(`Rendering factory ${factoryId}:`, factoryData);
-                                    return (
-                                        <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
-                                            <div className="flex items-center justify-between mb-4">
-                                                <h3 className="text-lg font-semibold text-gray-800">
-                                                    {factoryData.name || `Factory ${factoryId}`} - Daily Production vs Sales Trend
-                                                </h3>
-                                                <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                                    <div className="flex items-center">
-                                                        <div className="w-4 h-4 bg-blue-600 rounded-full mr-2"></div>
-                                                        <span>Production</span>
-                                                    </div>
-                                                    <div className="flex items-center">
-                                                        <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                                                        <span>Sales</span>
-                                                    </div>
+                <div className="bg-gray-50 rounded-lg p-6">
+                    <h2 className="text-xl font-bold text-gray-800 mb-6">
+                        {user?.role === 'headquarters' ? 'All Factories' : 'Your Factory'} - Production vs Sales Daily Trends (Last 30 Days)
+                    </h2>
+                    
+                    {Object.keys(factoriesToDisplay).length > 0 ? (
+                        <div className="grid grid-cols-1 gap-8">
+                            {Object.entries(factoriesToDisplay).map(([factoryId, factoryData]) => {
+                                console.log(`Rendering factory ${factoryId}:`, factoryData);
+                                return (
+                                    <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-lg font-semibold text-gray-800">
+                                                {factoryData.name || `Factory ${factoryId}`}
+                                            </h3>
+                                            <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                <div className="flex items-center">
+                                                    <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
+                                                    <span>Production</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                    <span>Sales</span>
                                                 </div>
                                             </div>
-                                            <div className="h-80 w-full">
-                                                <Line
-                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
-                                                    options={dailyTrendChartOptions}
-                                                />
+                                        </div>
+                                        <div className="h-96 w-full">
+                                            <Line
+                                                data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
+                                                options={dailyTrendChartOptions}
+                                            />
+                                        </div>
+                                        
+                                        {/* Factory Summary Stats */}
+                                        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                                            <div className="text-center">
+                                                <p className="text-sm text-gray-500">Total Production</p>
+                                                <p className="text-lg font-semibold text-blue-900">
+                                                    {factoryData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
+                                                </p>
                                             </div>
-                                            {/* Debug info */}
-                                            <div className="mt-4 text-xs text-gray-500">
-                                                <p>Data points: {factoryData?.dates?.length || 0} days</p>
-                                                <p>Production data: {factoryData?.production?.length || 0} points</p>
-                                                <p>Sales data: {factoryData?.sales?.length || 0} points</p>
+                                            <div className="text-center">
+                                                <p className="text-sm text-gray-500">Total Sales</p>
+                                                <p className="text-lg font-semibold text-yellow-600">
+                                                    {factoryData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
+                                                </p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm text-gray-500">Avg Daily Production</p>
+                                                <p className="text-lg font-semibold text-blue-700">
+                                                    {factoryData?.production?.length > 0 
+                                                        ? Math.round(factoryData.production.reduce((a, b) => a + b, 0) / factoryData.production.length).toLocaleString()
+                                                        : 0}
+                                                </p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="text-sm text-gray-500">Avg Daily Sales</p>
+                                                <p className="text-lg font-semibold text-yellow-700">
+                                                    {factoryData?.sales?.length > 0 
+                                                        ? Math.round(factoryData.sales.reduce((a, b) => a + b, 0) / factoryData.sales.length).toLocaleString()
+                                                        : 0}
+                                                </p>
                                             </div>
                                         </div>
-                                    );
-                                })}
+                                        
+                                        {/* Debug info (can be removed in production) */}
+                                        <div className="mt-4 text-xs text-gray-500">
+                                            <p>Data points: {factoryData?.dates?.length || 0} days</p>
+                                            <p>Production data: {factoryData?.production?.length || 0} points</p>
+                                            <p>Sales data: {factoryData?.sales?.length || 0} points</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                            <div className="flex items-center">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <h3 className="text-sm font-medium text-yellow-800">No Data Available</h3>
+                                    <p className="text-sm text-yellow-700 mt-1">
+                                        No production or sales data found for the last 30 days. Please check if daily logs have been created.
+                                    </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
+            </div>
 
-                {/* Fallback message if no factory data */}
-                {user?.role === 'headquarters' && (!analyticsData?.factories || Object.keys(analyticsData.factories).length === 0) && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-                        <div className="flex items-center">
-                            <div className="flex-shrink-0">
-                                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                            <div className="ml-3">
-                                <h3 className="text-sm font-medium text-yellow-800">No Factory Data Available</h3>
-                                <p className="text-sm text-yellow-700 mt-1">
-                                    No factory analytics data found. Check the debug information above and console logs for details.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Single factory view - show combined production and sales */}
-                {user?.role !== 'headquarters' && (
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <h3 className="text-lg font-semibold mb-4">Production & Sales Daily Trend (Last 30 Days)</h3>
-                        <div className="h-80">
-                            <Line
-                                data={{
-                                    labels: analyticsData?.dates || [],
-                                    datasets: [
-                                        {
-                                            label: 'Production',
-                                            data: analyticsData?.production || [],
-                                            borderColor: 'rgb(26,53,91)',
-                                            backgroundColor: 'rgba(26,53,91,0.1)',
-                                            tension: 0.1,
-                                            fill: false,
-                                            pointBackgroundColor: 'rgb(26,53,91)',
-                                            pointBorderColor: 'rgb(26,53,91)',
-                                            pointRadius: 4,
-                                            pointHoverRadius: 6,
-                                        },
-                                        {
-                                            label: 'Sales',
-                                            data: analyticsData?.sales || [],
-                                            borderColor: 'rgb(255,199,44)',
-                                            backgroundColor: 'rgba(255,199,44,0.1)',
-                                            tension: 0.1,
-                                            fill: false,
-                                            pointBackgroundColor: 'rgb(255,199,44)',
-                                            pointBorderColor: 'rgb(255,199,44)',
-                                            pointRadius: 4,
-                                            pointHoverRadius: 6,
-                                        },
-                                    ],
-                                }}
-                                options={dailyTrendChartOptions}
-                            />
-                        </div>
-                    </div>
-                )}
-
-                {/* Headquarters-only comparison charts */}
-                {user?.role === 'headquarters' && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Factory Production Comparison</h3>
-                            {Object.keys(comparisonData || {}).length > 0 ? (
+            {/* Headquarters-only comparison charts */}
+            {user?.role === 'headquarters' && Object.keys(comparisonData || {}).length > 0 && (
+                <div className="space-y-6">
+                    <div className="bg-gray-50 rounded-lg p-6">
+                        <h2 className="text-xl font-bold text-gray-800 mb-6">Factory Comparison Analytics</h2>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <h3 className="text-lg font-semibold mb-4">Production Comparison</h3>
                                 <Bar data={factoryProductionData} options={barChartOptions} />
-                            ) : (
-                                <p>No comparison data available</p>
-                            )}
-                        </div>
-                        <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Factory Sales Comparison</h3>
-                            {Object.keys(comparisonData || {}).length > 0 ? (
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <h3 className="text-lg font-semibold mb-4">Sales Comparison</h3>
                                 <Bar data={factorySalesData} options={barChartOptions} />
-                            ) : (
-                                <p>No comparison data available</p>
-                            )}
-                        </div>
-                        <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Downtime Comparison</h3>
-                            {Object.keys(comparisonData || {}).length > 0 ? (
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <h3 className="text-lg font-semibold mb-4">Downtime Comparison</h3>
                                 <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
-                            ) : (
-                                <p>No comparison data available</p>
-                            )}
-                        </div>
-                        <div className="bg-white rounded-lg shadow p-6">
-                            <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
-                            {Object.keys(comparisonData || {}).length > 0 ? (
+                            </div>
+                            <div className="bg-white rounded-lg shadow p-6">
+                                <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
                                 <Doughnut
                                     data={efficiencyData}
                                     options={{
@@ -610,13 +683,11 @@ const DashboardTab = () => {
                                         },
                                     }}
                                 />
-                            ) : (
-                                <p>No comparison data available</p>
-                            )}
+                            </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 };
