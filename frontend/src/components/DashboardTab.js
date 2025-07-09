@@ -33,53 +33,112 @@ ChartJS.register(
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const DashboardTab = () => {
-    const { user } = useContext(AuthContext);
+    const { user, token } = useContext(AuthContext);
     const [analyticsData, setAnalyticsData] = useState({});
     const [comparisonData, setComparisonData] = useState({});
     const [dashboardData, setDashboardData] = useState({});
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Create axios instance with auth headers
+    const authAxios = axios.create({
+        baseURL: API,
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
+    });
 
     useEffect(() => {
-        fetchAnalyticsData();
-        fetchDashboardData();
-        if (user?.role === 'headquarters') {
-            fetchComparisonData();
+        if (token && user) {
+            console.log('User:', user);
+            console.log('Token exists:', !!token);
+            fetchAllData();
+        } else {
+            console.log('No token or user available');
+            setError('Authentication required');
+            setLoading(false);
         }
-    }, []);
+    }, [token, user]);
 
-    const fetchAnalyticsData = async () => {
+    const fetchAllData = async () => {
         try {
-            const res = await axios.get(`${API}/analytics/trends?days=30`);
-            setAnalyticsData(res.data);
+            setLoading(true);
+            setError(null);
+            
+            // Fetch analytics data
+            await fetchAnalyticsData();
+            
+            // Fetch dashboard data
+            await fetchDashboardData();
+            
+            // Fetch comparison data for headquarters
+            if (user?.role === 'headquarters') {
+                await fetchComparisonData();
+            }
         } catch (err) {
-            toast.error('Failed to load analytics data');
+            console.error('Error fetching dashboard data:', err);
+            setError(err.message || 'Failed to load dashboard data');
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchAnalyticsData = async () => {
+        try {
+            console.log('Fetching analytics data...');
+            const res = await authAxios.get('/analytics/trends?days=30');
+            console.log('Analytics data response:', res.data);
+            setAnalyticsData(res.data);
+        } catch (err) {
+            console.error('Error fetching analytics data:', err);
+            if (err.response) {
+                console.error('Response status:', err.response.status);
+                console.error('Response data:', err.response.data);
+            }
+            toast.error('Failed to load analytics data');
+            throw err;
+        }
+    };
+
     const fetchDashboardData = async () => {
         try {
-            const res = await axios.get(`${API}/dashboard-summary`);
+            console.log('Fetching dashboard data...');
+            const res = await authAxios.get('/dashboard-summary');
+            console.log('Dashboard data response:', res.data);
             setDashboardData(res.data);
         } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+            if (err.response) {
+                console.error('Response status:', err.response.status);
+                console.error('Response data:', err.response.data);
+            }
             toast.error('Failed to load dashboard data');
+            throw err;
         }
     };
 
     const fetchComparisonData = async () => {
         try {
-            const res = await axios.get(`${API}/analytics/factory-comparison?days=30`);
+            console.log('Fetching comparison data...');
+            const res = await authAxios.get('/analytics/factory-comparison?days=30');
+            console.log('Comparison data response:', res.data);
             setComparisonData(res.data);
         } catch (err) {
+            console.error('Error fetching comparison data:', err);
+            if (err.response) {
+                console.error('Response status:', err.response.status);
+                console.error('Response data:', err.response.data);
+            }
             toast.error('Failed to load comparison data');
+            throw err;
         }
     };
 
     const exportToExcel = async () => {
         try {
             toast.loading('Generating Excel report...');
-            const res = await axios.get(`${API}/export-excel`, { responseType: 'blob' });
+            const res = await authAxios.get('/export-excel', { responseType: 'blob' });
             const blob = new Blob([res.data], {
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             });
@@ -93,14 +152,15 @@ const DashboardTab = () => {
             window.URL.revokeObjectURL(url);
             toast.success('Excel report downloaded successfully!');
         } catch (err) {
+            console.error('Error exporting Excel:', err);
             toast.error('Failed to export Excel report');
         }
     };
 
     // Enhanced function to create factory-specific production vs sales chart
     const createFactoryProductionVsSalesChart = (factoryData, factoryName) => {
-        console.log('Factory Data:', factoryData); // Debug log
-        console.log('Factory Name:', factoryName); // Debug log
+        console.log('Creating chart for factory:', factoryName);
+        console.log('Factory Data:', factoryData);
         
         const chartData = {
             labels: factoryData?.dates || [],
@@ -134,7 +194,7 @@ const DashboardTab = () => {
             ],
         };
         
-        console.log('Chart Data:', chartData); // Debug log
+        console.log('Chart Data:', chartData);
         return chartData;
     };
 
@@ -328,8 +388,57 @@ const DashboardTab = () => {
         },
     };
 
+    // Show loading state
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading dashboard data...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Show error state
+    if (error) {
+        return (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                <div className="flex items-center">
+                    <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                    </div>
+                    <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800">Error Loading Dashboard</h3>
+                        <p className="text-sm text-red-700 mt-1">{error}</p>
+                        <button 
+                            onClick={fetchAllData}
+                            className="mt-2 bg-red-100 hover:bg-red-200 text-red-800 font-medium py-1 px-3 rounded text-sm"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8">
+            {/* Debug Information */}
+            <div className="bg-gray-100 rounded-lg p-4 text-sm">
+                <h4 className="font-medium mb-2">Debug Information:</h4>
+                <div className="space-y-1">
+                    <p>User Role: {user?.role}</p>
+                    <p>User Factory ID: {user?.factory_id || 'N/A'}</p>
+                    <p>Analytics Data Available: {Object.keys(analyticsData).length > 0 ? 'Yes' : 'No'}</p>
+                    <p>Factories Data: {analyticsData?.factories ? Object.keys(analyticsData.factories).length : 0} factories</p>
+                    <p>Comparison Data: {Object.keys(comparisonData).length} factories</p>
+                </div>
+            </div>
+
             {/* Summary Cards - Only Total Downtime */}
             <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                 <div className="bg-white rounded-lg shadow p-6">
@@ -361,7 +470,7 @@ const DashboardTab = () => {
                             </h2>
                             <div className="grid grid-cols-1 gap-8">
                                 {Object.entries(analyticsData.factories).map(([factoryId, factoryData]) => {
-                                    console.log(`Rendering factory ${factoryId}:`, factoryData); // Debug log
+                                    console.log(`Rendering factory ${factoryId}:`, factoryData);
                                     return (
                                         <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
                                             <div className="flex items-center justify-between mb-4">
@@ -379,18 +488,12 @@ const DashboardTab = () => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            {loading ? (
-                                                <div className="flex items-center justify-center h-80">
-                                                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                                                </div>
-                                            ) : (
-                                                <div className="h-80 w-full">
-                                                    <Line 
-                                                        data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)} 
-                                                        options={dailyTrendChartOptions} 
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="h-80 w-full">
+                                                <Line 
+                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)} 
+                                                    options={dailyTrendChartOptions} 
+                                                />
+                                            </div>
                                             {/* Debug info */}
                                             <div className="mt-4 text-xs text-gray-500">
                                                 <p>Data points: {factoryData?.dates?.length || 0} days</p>
@@ -406,7 +509,7 @@ const DashboardTab = () => {
                 )}
 
                 {/* Fallback message if no factory data */}
-                {user?.role === 'headquarters' && (!analyticsData?.factories || Object.keys(analyticsData.factories).length === 0) && !loading && (
+                {user?.role === 'headquarters' && (!analyticsData?.factories || Object.keys(analyticsData.factories).length === 0) && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
                         <div className="flex items-center">
                             <div className="flex-shrink-0">
@@ -417,7 +520,7 @@ const DashboardTab = () => {
                             <div className="ml-3">
                                 <h3 className="text-sm font-medium text-yellow-800">No Factory Data Available</h3>
                                 <p className="text-sm text-yellow-700 mt-1">
-                                    No factory analytics data found. Please ensure your API is returning factory data in the expected format.
+                                    No factory analytics data found. Check the debug information above and console logs for details.
                                 </p>
                             </div>
                         </div>
@@ -428,46 +531,40 @@ const DashboardTab = () => {
                 {user?.role !== 'headquarters' && (
                     <div className="bg-white rounded-lg shadow p-6">
                         <h3 className="text-lg font-semibold mb-4">Production & Sales Daily Trend (Last 30 Days)</h3>
-                        {loading ? (
-                            <div className="flex items-center justify-center h-64">
-                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                            </div>
-                        ) : (
-                            <div className="h-80">
-                                <Line 
-                                    data={{
-                                        labels: analyticsData?.dates || [],
-                                        datasets: [
-                                            {
-                                                label: 'Production',
-                                                data: analyticsData?.production || [],
-                                                borderColor: 'rgb(26,53,91)',
-                                                backgroundColor: 'rgba(26,53,91,0.1)',
-                                                tension: 0.1,
-                                                fill: false,
-                                                pointBackgroundColor: 'rgb(26,53,91)',
-                                                pointBorderColor: 'rgb(26,53,91)',
-                                                pointRadius: 4,
-                                                pointHoverRadius: 6,
-                                            },
-                                            {
-                                                label: 'Sales',
-                                                data: analyticsData?.sales || [],
-                                                borderColor: 'rgb(255,199,44)',
-                                                backgroundColor: 'rgba(255,199,44,0.1)',
-                                                tension: 0.1,
-                                                fill: false,
-                                                pointBackgroundColor: 'rgb(255,199,44)',
-                                                pointBorderColor: 'rgb(255,199,44)',
-                                                pointRadius: 4,
-                                                pointHoverRadius: 6,
-                                            },
-                                        ],
-                                    }} 
-                                    options={dailyTrendChartOptions} 
-                                />
-                            </div>
-                        )}
+                        <div className="h-80">
+                            <Line 
+                                data={{
+                                    labels: analyticsData?.dates || [],
+                                    datasets: [
+                                        {
+                                            label: 'Production',
+                                            data: analyticsData?.production || [],
+                                            borderColor: 'rgb(26,53,91)',
+                                            backgroundColor: 'rgba(26,53,91,0.1)',
+                                            tension: 0.1,
+                                            fill: false,
+                                            pointBackgroundColor: 'rgb(26,53,91)',
+                                            pointBorderColor: 'rgb(26,53,91)',
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6,
+                                        },
+                                        {
+                                            label: 'Sales',
+                                            data: analyticsData?.sales || [],
+                                            borderColor: 'rgb(255,199,44)',
+                                            backgroundColor: 'rgba(255,199,44,0.1)',
+                                            tension: 0.1,
+                                            fill: false,
+                                            pointBackgroundColor: 'rgb(255,199,44)',
+                                            pointBorderColor: 'rgb(255,199,44)',
+                                            pointRadius: 4,
+                                            pointHoverRadius: 6,
+                                        },
+                                    ],
+                                }} 
+                                options={dailyTrendChartOptions} 
+                            />
+                        </div>
                     </div>
                 )}
 
@@ -479,7 +576,7 @@ const DashboardTab = () => {
                             {Object.keys(comparisonData || {}).length > 0 ? (
                                 <Bar data={factoryProductionData} options={barChartOptions} />
                             ) : (
-                                <p>No data available</p>
+                                <p>No comparison data available</p>
                             )}
                         </div>
                         <div className="bg-white rounded-lg shadow p-6">
@@ -487,7 +584,7 @@ const DashboardTab = () => {
                             {Object.keys(comparisonData || {}).length > 0 ? (
                                 <Bar data={factorySalesData} options={barChartOptions}/>
                             ) : (
-                                <p>No data available</p>
+                                <p>No comparison data available</p>
                             )}
                         </div>
                         <div className="bg-white rounded-lg shadow p-6">
@@ -495,7 +592,7 @@ const DashboardTab = () => {
                             {Object.keys(comparisonData || {}).length > 0 ? (
                                 <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
                             ) : (
-                                <p>No data available</p>
+                                <p>No comparison data available</p>
                             )}
                         </div>
                         <div className="bg-white rounded-lg shadow p-6">
@@ -511,7 +608,7 @@ const DashboardTab = () => {
                                     }}
                                 />
                             ) : (
-                                <p>No data available</p>
+                                <p>No comparison data available</p>
                             )}
                         </div>
                     </div>
