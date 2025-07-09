@@ -473,7 +473,7 @@ async def get_analytics_trends(
     logs = await db.daily_logs.find(query).sort("date", 1).to_list(1000)
     
     # For single factory (factory_employer or specific factory requested)
-    if current_user.role == "factory_employer" or factory_id:
+    if current_user.role == "factory_employer" or (factory_id is not None and factory_id != ""):
         # Prepare single factory trend data
         trends = {
             "production": [],
