@@ -456,6 +456,8 @@ async def get_analytics_trends(
     current_user: User = Depends(get_current_user)
 ):
     """Get analytics trends for charts"""
+    print(f"Analytics trends request - User: {current_user.username}, Role: {current_user.role}, Factory ID: {current_user.factory_id}")
+    
     query = {}
     
     # Filter by factory access
@@ -494,7 +496,11 @@ async def get_analytics_trends(
                 }
             
             daily_data[date_str]["production"] += sum(log["production_data"].values())
-            daily_data[date_str]["sales"] += sum(item["amount"] for item in log["sales_data"].values())
+            for item in log["sales_data"].values():
+                if isinstance(item, dict):
+                    daily_data[date_str]["sales"] += item.get("amount", 0)
+                else:
+                    daily_data[date_str]["sales"] += item
             daily_data[date_str]["downtime"] += log["downtime_hours"]
             daily_data[date_str]["stock"] += sum(log["stock_data"].values())
         
@@ -558,7 +564,12 @@ async def get_analytics_trends(
                 }
             
             factory_daily_data[factory_id][date_str]["production"] += sum(log["production_data"].values())
-            factory_daily_data[factory_id][date_str]["sales"] += sum(item["amount"] for item in log["sales_data"].values())
+            for item in log["sales_data"].values():
+                if isinstance(item, dict):
+                    factory_daily_data[factory_id][date_str]["sales"] += item.get("amount", 0)
+                else:
+                    factory_daily_data[factory_id][date_str]["sales"] += item
+
             
             # Overall data for downtime and stock
             if date_str not in overall_daily_data:
@@ -583,6 +594,14 @@ async def get_analytics_trends(
                 factory_trends["downtime"][i] = overall_daily_data[date_str]["downtime"]
                 factory_trends["stock"][i] = overall_daily_data[date_str]["stock"]
         
+        # Add this before the return statement in the headquarters section:
+        print(f"Returning factory trends for headquarters:")
+        print(f"- Number of factories: {len(factory_trends['factories'])}")
+        print(f"- Factory IDs: {list(factory_trends['factories'].keys())}")
+        print(f"- Date range: {len(factory_trends['dates'])} days")
+        for fid, fdata in factory_trends['factories'].items():
+            print(f"  Factory {fid}: {sum(fdata['production'])} total production, {sum(fdata['sales'])} total sales")
+
         return factory_trends
 
 @api_router.get("/analytics/factory-comparison")

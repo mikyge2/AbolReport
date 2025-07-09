@@ -33,7 +33,8 @@ ChartJS.register(
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 const DashboardTab = () => {
-    const { user, token } = useContext(AuthContext);
+    const { user } = useContext(AuthContext);
+    const token = localStorage.getItem('token');
     const [analyticsData, setAnalyticsData] = useState({});
     const [comparisonData, setComparisonData] = useState({});
     const [dashboardData, setDashboardData] = useState({});
@@ -65,13 +66,13 @@ const DashboardTab = () => {
         try {
             setLoading(true);
             setError(null);
-            
+
             // Fetch analytics data
             await fetchAnalyticsData();
-            
+
             // Fetch dashboard data
             await fetchDashboardData();
-            
+
             // Fetch comparison data for headquarters
             if (user?.role === 'headquarters') {
                 await fetchComparisonData();
@@ -89,6 +90,8 @@ const DashboardTab = () => {
             console.log('Fetching analytics data...');
             const res = await authAxios.get('/analytics/trends?days=30');
             console.log('Analytics data response:', res.data);
+            console.log('Analytics factories:', res.data.factories);
+            console.log('Analytics factories keys:', Object.keys(res.data.factories || {}));
             setAnalyticsData(res.data);
         } catch (err) {
             console.error('Error fetching analytics data:', err);
@@ -161,7 +164,7 @@ const DashboardTab = () => {
     const createFactoryProductionVsSalesChart = (factoryData, factoryName) => {
         console.log('Creating chart for factory:', factoryName);
         console.log('Factory Data:', factoryData);
-        
+
         const chartData = {
             labels: factoryData?.dates || [],
             datasets: [
@@ -193,7 +196,7 @@ const DashboardTab = () => {
                 },
             ],
         };
-        
+
         console.log('Chart Data:', chartData);
         return chartData;
     };
@@ -224,7 +227,7 @@ const DashboardTab = () => {
                 borderColor: 'rgba(255, 255, 255, 0.1)',
                 borderWidth: 1,
                 callbacks: {
-                    label: function(context) {
+                    label: function (context) {
                         const dataset = context.dataset;
                         const value = context.parsed.y;
                         return `${dataset.label}: ${value?.toLocaleString() || 0} units`;
@@ -344,7 +347,7 @@ const DashboardTab = () => {
             },
             tooltip: {
                 callbacks: {
-                    label: function(context) {
+                    label: function (context) {
                         const dataset = context.dataset;
                         const value = context.parsed.y;
                         const skuUnit = dataset.skuUnit ? dataset.skuUnit[context.dataIndex] : 'units';
@@ -413,7 +416,7 @@ const DashboardTab = () => {
                     <div className="ml-3">
                         <h3 className="text-sm font-medium text-red-800">Error Loading Dashboard</h3>
                         <p className="text-sm text-red-700 mt-1">{error}</p>
-                        <button 
+                        <button
                             onClick={fetchAllData}
                             className="mt-2 bg-red-100 hover:bg-red-200 text-red-800 font-medium py-1 px-3 rounded text-sm"
                         >
@@ -489,9 +492,9 @@ const DashboardTab = () => {
                                                 </div>
                                             </div>
                                             <div className="h-80 w-full">
-                                                <Line 
-                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)} 
-                                                    options={dailyTrendChartOptions} 
+                                                <Line
+                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
+                                                    options={dailyTrendChartOptions}
                                                 />
                                             </div>
                                             {/* Debug info */}
@@ -532,7 +535,7 @@ const DashboardTab = () => {
                     <div className="bg-white rounded-lg shadow p-6">
                         <h3 className="text-lg font-semibold mb-4">Production & Sales Daily Trend (Last 30 Days)</h3>
                         <div className="h-80">
-                            <Line 
+                            <Line
                                 data={{
                                     labels: analyticsData?.dates || [],
                                     datasets: [
@@ -561,8 +564,8 @@ const DashboardTab = () => {
                                             pointHoverRadius: 6,
                                         },
                                     ],
-                                }} 
-                                options={dailyTrendChartOptions} 
+                                }}
+                                options={dailyTrendChartOptions}
                             />
                         </div>
                     </div>
@@ -582,7 +585,7 @@ const DashboardTab = () => {
                         <div className="bg-white rounded-lg shadow p-6">
                             <h3 className="text-lg font-semibold mb-4">Factory Sales Comparison</h3>
                             {Object.keys(comparisonData || {}).length > 0 ? (
-                                <Bar data={factorySalesData} options={barChartOptions}/>
+                                <Bar data={factorySalesData} options={barChartOptions} />
                             ) : (
                                 <p>No comparison data available</p>
                             )}
