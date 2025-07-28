@@ -215,10 +215,13 @@ async def register(user: UserCreate):
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
     
-    # Validate factory_id for factory employers
+    # Validate factory_id for factory employers only
     if user.role == "factory_employer":
         if not user.factory_id or user.factory_id not in FACTORIES:
             raise HTTPException(status_code=400, detail="Valid factory_id required for factory employers")
+    elif user.role == "headquarters":
+        # Headquarters users should not have factory_id
+        user.factory_id = None
     
     # Create user
     user_dict = user.dict()
