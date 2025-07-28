@@ -284,6 +284,9 @@ const UserManagementTab = () => {
                                         Name
                                     </th>
                                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                        Role
+                                    </th>
+                                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
                                         Factory
                                     </th>
                                     <th className="px-4 py-2"></th>
