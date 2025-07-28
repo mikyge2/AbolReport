@@ -312,6 +312,7 @@ async def get_daily_logs(
     factory_id: Optional[str] = None,
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
+    created_by_me: Optional[bool] = None,
     current_user: User = Depends(get_current_user)
 ):
     query = {}
@@ -321,6 +322,10 @@ async def get_daily_logs(
         query["factory_id"] = current_user.factory_id
     elif factory_id:
         query["factory_id"] = factory_id
+    
+    # Filter by creator if requested
+    if created_by_me:
+        query["created_by"] = current_user.username
     
     # Date filtering
     if start_date or end_date:
