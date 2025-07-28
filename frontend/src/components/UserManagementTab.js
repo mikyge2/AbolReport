@@ -56,8 +56,8 @@ const UserManagementTab = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.username || !form.factoryId) {
-            toast.error('Please fill in all required fields');
+        if (!form.username) {
+            toast.error('Username is required');
             return;
         }
 
@@ -66,14 +66,24 @@ const UserManagementTab = () => {
             return;
         }
 
+        // Validate factory_id for factory employers
+        if (form.role === 'factory_employer' && !form.factoryId) {
+            toast.error('Factory selection is required for factory employers');
+            return;
+        }
+
         const payload = {
             first_name: form.firstName,
             last_name: form.lastName,
             username: form.username,
             email: form.username + '@company.com', // Generate email from username
-            role: 'factory_employer',
-            factory_id: form.factoryId,
+            role: form.role,
         };
+
+        // Only include factory_id for factory employers
+        if (form.role === 'factory_employer') {
+            payload.factory_id = form.factoryId;
+        }
 
         if (form.password) {
             payload.password = form.password;
@@ -98,6 +108,7 @@ const UserManagementTab = () => {
                 lastName: '',
                 username: '',
                 password: '',
+                role: 'factory_employer',
                 factoryId: '',
             });
             setEditingUserId(null);
