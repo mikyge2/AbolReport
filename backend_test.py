@@ -8,12 +8,14 @@ class FactoryPortalAPITest(unittest.TestCase):
     def setUp(self):
         # Get the backend URL from the frontend .env file
         self.base_url = "https://1bfaaac1-5e84-4d00-b041-a30f1f53362b.preview.emergentagent.com/api"
-        self.token = None
-        self.user_info = None
+        self.hq_token = None
+        self.hq_user_info = None
+        self.factory_token = None
+        self.factory_user_info = None
         
-        # Test user credentials - using demo credentials from the frontend
-        self.test_username = "admin"
-        self.test_password = "admin123"
+        # Test user credentials
+        self.hq_username = "admin"
+        self.hq_password = "admin123"
         
         # Create a directory for downloaded files if it doesn't exist
         self.download_dir = "/tmp/factory_portal_test_downloads"
