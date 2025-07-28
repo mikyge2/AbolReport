@@ -116,6 +116,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Added DowntimeReason model with reason and hours fields, updated DailyLog model to use List[DowntimeReason] instead of single reason string"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Multi-reason downtime logging works correctly. Successfully created daily log with 3 downtime reasons (Equipment Maintenance: 2.5h, Power Outage: 1.0h, Staff Training: 0.5h) totaling 4.0 hours. API correctly accepts downtime_reasons as list of objects with reason and hours fields."
 
   - task: "Update Factory Comparison Analytics to show today's data only"
     implemented: true
@@ -128,6 +131,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Updated /analytics/factory-comparison endpoint to filter for today's data only instead of last 30 days"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Factory comparison analytics works correctly. Endpoint returns today's data only for all 4 factories (amen_water, mintu_plast, mintu_export, wakene_food) with proper metrics (name, production, sales, revenue, downtime, efficiency, sku_unit). Correctly restricted to headquarters users only (403 for factory users)."
 
   - task: "Add User model name fields for user management"
     implemented: true
@@ -140,6 +146,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Added first_name and last_name fields to User, UserCreate, and UserResponse models"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: User model name fields working correctly. GET /users returns users with first_name and last_name fields. Successfully created user with name fields and verified they are properly stored and returned."
 
   - task: "Update user management endpoints"
     implemented: true
@@ -152,6 +161,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Added POST /users endpoint for creating users with proper authentication, updated PUT /users/{user_id} to handle name fields, updated GET /users to return name fields"
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: User management endpoints working correctly. POST /users creates users with proper authentication and name fields. GET /users returns 2 users with all required fields. PUT /users/{user_id} successfully updates name fields (tested updating 'Wakene Manager' to 'Updated Wakene Updated Manager'). All endpoints properly restricted to headquarters users only (403 for factory users)."
 
 frontend:
   - task: "Update Daily Logging Tab for multiple downtime reasons"
