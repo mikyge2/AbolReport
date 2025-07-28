@@ -296,8 +296,19 @@ const UserManagementTab = () => {
                                 {users.map((u) => (
                                     <tr key={u.id}>
                                         <td className="px-4 py-2">{u.username}</td>
-                                        <td className="px-4 py-2">{u.first_name} {u.last_name}</td>
-                                        <td className="px-4 py-2">{factories[u.factory_id]?.name || u.factory_id}</td>
+                                        <td className="px-4 py-2">{u.first_name || ''} {u.last_name || ''}</td>
+                                        <td className="px-4 py-2">
+                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                u.role === 'headquarters' 
+                                                    ? 'bg-purple-100 text-purple-800' 
+                                                    : 'bg-blue-100 text-blue-800'
+                                            }`}>
+                                                {u.role === 'headquarters' ? 'HQ' : 'Factory'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-2">
+                                            {u.role === 'headquarters' ? 'All Factories' : (factories[u.factory_id]?.name || u.factory_id)}
+                                        </td>
                                         <td className="px-4 py-2 space-x-2">
                                             <button
                                                 onClick={() => handleEdit(u)}
