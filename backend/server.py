@@ -101,6 +101,10 @@ class Token(BaseModel):
     token_type: str
     user_info: Dict[str, Any]
 
+class DowntimeReason(BaseModel):
+    reason: str
+    hours: float
+
 class DailyLog(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     factory_id: str
@@ -108,7 +112,7 @@ class DailyLog(BaseModel):
     production_data: Dict[str, float]  # product -> amount
     sales_data: Dict[str, Dict[str, float]]  # product -> {amount, unit_price}
     downtime_hours: float
-    downtime_reason: str
+    downtime_reasons: List[DowntimeReason]  # Updated to support multiple reasons
     stock_data: Dict[str, float]  # product -> current_stock
     created_by: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -119,7 +123,7 @@ class DailyLogCreate(BaseModel):
     production_data: Dict[str, float]
     sales_data: Dict[str, Dict[str, float]]
     downtime_hours: float
-    downtime_reason: str
+    downtime_reasons: List[DowntimeReason]  # Updated to support multiple reasons
     stock_data: Dict[str, float]
 
 # Authentication functions
