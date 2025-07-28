@@ -169,8 +169,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     return User(**user)
 
 # Routes
-@api_router.post("/register", response_model=UserResponse)
-async def register(user: UserCreate):
+@api_router.post("/users", response_model=UserResponse)
+async def create_user(user: UserCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role != "headquarters":
+        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
+    
     # Check if user exists
     existing_user = await db.users.find_one({"username": user.username})
     if existing_user:
@@ -196,6 +199,8 @@ async def register(user: UserCreate):
         email=user_obj.email,
         role=user_obj.role,
         factory_id=user_obj.factory_id,
+        first_name=user_obj.first_name,
+        last_name=user_obj.last_name,
         created_at=user_obj.created_at
     )
     return user_response
