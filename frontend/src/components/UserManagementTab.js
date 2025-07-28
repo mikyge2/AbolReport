@@ -206,22 +206,38 @@ const UserManagementTab = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Working Factory *
+                            Role *
                         </label>
                         <select
-                            value={form.factoryId}
-                            onChange={(e) => setForm({ ...form, factoryId: e.target.value })}
+                            value={form.role}
+                            onChange={(e) => setForm({ ...form, role: e.target.value })}
                             className="w-full border border-gray-300 rounded px-3 py-2"
                             required
                         >
-                            <option value="">Select Factory</option>
-                            {Object.entries(factories || {}).map(([id, f]) => (
-                                <option key={id} value={id}>
-                                    {f.name}
-                                </option>
-                            ))}
+                            <option value="factory_employer">Factory Employer</option>
+                            <option value="headquarters">Headquarters</option>
                         </select>
                     </div>
+                    {form.role === 'factory_employer' && (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Working Factory *
+                            </label>
+                            <select
+                                value={form.factoryId}
+                                onChange={(e) => setForm({ ...form, factoryId: e.target.value })}
+                                className="w-full border border-gray-300 rounded px-3 py-2"
+                                required
+                            >
+                                <option value="">Select Factory</option>
+                                {Object.entries(factories || {}).map(([id, f]) => (
+                                    <option key={id} value={id}>
+                                        {f.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
                     <div className="md:col-span-2 flex space-x-2">
                         <button
                             type="submit"
@@ -239,6 +255,7 @@ const UserManagementTab = () => {
                                         lastName: '',
                                         username: '',
                                         password: '',
+                                        role: 'factory_employer',
                                         factoryId: '',
                                     });
                                 }}
