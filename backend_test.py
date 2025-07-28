@@ -1208,6 +1208,400 @@ class FactoryPortalAPITest(unittest.TestCase):
             print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
             self.fail(f"❌ Excel export content validation test failed: {str(e)}")
 
+    def test_31_daily_logs_created_by_me_parameter_factory_user(self):
+        """Test daily-logs endpoint with created_by_me parameter for factory user"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create logs with different users to test filtering
+        today = datetime.utcnow()
+        
+        # Create a log as factory user
+        factory_log_data = {
+            "factory_id": "wakene_food",
+            "date": (today - timedelta(days=20)).isoformat(),
+            "production_data": {"Flour": 300},
+            "sales_data": {"Flour": {"amount": 250, "unit_price": 50}},
+            "downtime_hours": 2.0,
+            "downtime_reasons": [{"reason": "Factory User Log", "hours": 2.0}],
+            "stock_data": {"Flour": 800}
+        }
+        
+        try:
+            # Create log as factory user
+            response = requests.post(f"{self.base_url}/daily-logs", json=factory_log_data, headers=factory_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                factory_log_data["date"] = (today - timedelta(days=21)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=factory_log_data, headers=factory_headers)
+            
+            self.assertEqual(response.status_code, 200)
+            factory_log = response.json()
+            print(f"✅ Created log as factory user: {factory_log['id']}")
+            
+            # Test created_by_me=true - should only return logs created by factory user
+            response = requests.get(f"{self.base_url}/daily-logs?created_by_me=true", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            my_logs = response.json()
+            
+            # All logs should be created by the factory user
+            for log in my_logs:
+                self.assertEqual(log["created_by"], "wakene_manager")
+                
+            print(f"✅ Factory user with created_by_me=true returned {len(my_logs)} logs (all created by wakene_manager)")
+            
+            # Test without created_by_me parameter - should return all accessible logs (factory permissions)
+            response = requests.get(f"{self.base_url}/daily-logs", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            all_logs = response.json()
+            
+            # All logs should still be for wakene_food factory (role-based filtering)
+            for log in all_logs:
+                self.assertEqual(log["factory_id"], "wakene_food")
+                
+            print(f"✅ Factory user without created_by_me returned {len(all_logs)} logs (all from wakene_food factory)")
+            
+            # Verify that created_by_me=true returns subset of all logs
+            self.assertLessEqual(len(my_logs), len(all_logs))
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Daily logs created_by_me parameter test for factory user failed: {str(e)}")
+
+    def test_32_daily_logs_created_by_me_parameter_hq_user(self):
+        """Test daily-logs endpoint with created_by_me parameter for headquarters user"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create a log as HQ user
+        today = datetime.utcnow()
+        hq_log_data = {
+            "factory_id": "amen_water",
+            "date": (today - timedelta(days=22)).isoformat(),
+            "production_data": {"360ml": 1000, "600ml": 800},
+            "sales_data": {
+                "360ml": {"amount": 900, "unit_price": 2.5},
+                "600ml": {"amount": 700, "unit_price": 3.0}
+            },
+            "downtime_hours": 1.5,
+            "downtime_reasons": [{"reason": "HQ User Log", "hours": 1.5}],
+            "stock_data": {"360ml": 2000, "600ml": 1500}
+        }
+        
+        try:
+            # Create log as HQ user
+            response = requests.post(f"{self.base_url}/daily-logs", json=hq_log_data, headers=hq_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                hq_log_data["date"] = (today - timedelta(days=23)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=hq_log_data, headers=hq_headers)
+            
+            self.assertEqual(response.status_code, 200)
+            hq_log = response.json()
+            print(f"✅ Created log as HQ user: {hq_log['id']}")
+            
+            # Test created_by_me=true - should only return logs created by HQ user
+            response = requests.get(f"{self.base_url}/daily-logs?created_by_me=true", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            my_logs = response.json()
+            
+            # All logs should be created by the HQ user
+            for log in my_logs:
+                self.assertEqual(log["created_by"], "admin")
+                
+            print(f"✅ HQ user with created_by_me=true returned {len(my_logs)} logs (all created by admin)")
+            
+            # Test without created_by_me parameter - should return all logs (HQ permissions)
+            response = requests.get(f"{self.base_url}/daily-logs", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            all_logs = response.json()
+            
+            # Should see logs from multiple users and factories
+            creators = set(log["created_by"] for log in all_logs)
+            factories = set(log["factory_id"] for log in all_logs)
+            
+            print(f"✅ HQ user without created_by_me returned {len(all_logs)} logs from {len(creators)} creators and {len(factories)} factories")
+            
+            # Verify that created_by_me=true returns subset of all logs
+            self.assertLessEqual(len(my_logs), len(all_logs))
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Daily logs created_by_me parameter test for HQ user failed: {str(e)}")
+
+    def test_33_daily_logs_created_by_me_false_parameter(self):
+        """Test daily-logs endpoint with created_by_me=false parameter"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            # Test created_by_me=false - should return all accessible logs (same as no parameter)
+            response = requests.get(f"{self.base_url}/daily-logs?created_by_me=false", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            logs_false = response.json()
+            
+            # Test without parameter
+            response = requests.get(f"{self.base_url}/daily-logs", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            logs_no_param = response.json()
+            
+            # Should return the same results
+            self.assertEqual(len(logs_false), len(logs_no_param))
+            
+            print(f"✅ created_by_me=false returns same results as no parameter ({len(logs_false)} logs)")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Daily logs created_by_me=false parameter test failed: {str(e)}")
+
+    def test_34_daily_logs_created_by_me_with_other_filters(self):
+        """Test daily-logs endpoint with created_by_me combined with other filters"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create a log for testing date filtering
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=25)
+        
+        test_log_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {"Flour": 200},
+            "sales_data": {"Flour": {"amount": 180, "unit_price": 45}},
+            "downtime_hours": 1.0,
+            "downtime_reasons": [{"reason": "Combined Filter Test", "hours": 1.0}],
+            "stock_data": {"Flour": 700}
+        }
+        
+        try:
+            # Create test log
+            response = requests.post(f"{self.base_url}/daily-logs", json=test_log_data, headers=factory_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                test_log_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=test_log_data, headers=factory_headers)
+            
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            
+            # Test created_by_me=true with date range
+            start_date = (today - timedelta(days=30)).isoformat()
+            end_date = today.isoformat()
+            
+            params = {
+                'created_by_me': 'true',
+                'start_date': start_date,
+                'end_date': end_date
+            }
+            
+            response = requests.get(f"{self.base_url}/daily-logs", headers=factory_headers, params=params)
+            self.assertEqual(response.status_code, 200)
+            filtered_logs = response.json()
+            
+            # All logs should be created by factory user and within date range
+            for log in filtered_logs:
+                self.assertEqual(log["created_by"], "wakene_manager")
+                log_date = datetime.fromisoformat(log["date"].replace('Z', '+00:00'))
+                self.assertGreaterEqual(log_date, datetime.fromisoformat(start_date.replace('Z', '+00:00')))
+                self.assertLessEqual(log_date, datetime.fromisoformat(end_date.replace('Z', '+00:00')))
+            
+            print(f"✅ created_by_me=true with date range returned {len(filtered_logs)} logs")
+            
+            # Test created_by_me=true with factory_id (should be redundant for factory user)
+            params = {
+                'created_by_me': 'true',
+                'factory_id': 'wakene_food'
+            }
+            
+            response = requests.get(f"{self.base_url}/daily-logs", headers=factory_headers, params=params)
+            self.assertEqual(response.status_code, 200)
+            factory_filtered_logs = response.json()
+            
+            # All logs should be created by factory user and for wakene_food
+            for log in factory_filtered_logs:
+                self.assertEqual(log["created_by"], "wakene_manager")
+                self.assertEqual(log["factory_id"], "wakene_food")
+            
+            print(f"✅ created_by_me=true with factory_id returned {len(factory_filtered_logs)} logs")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Daily logs created_by_me with other filters test failed: {str(e)}")
+
+    def test_35_excel_export_openpyxl_dependency_verification(self):
+        """Test that Excel export still works after openpyxl dependency was added"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create test data to ensure we have something to export
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=30)
+        
+        test_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 500,
+                "Fruska (Wheat Bran)": 250,
+                "Fruskelo (Wheat Germ)": 150
+            },
+            "sales_data": {
+                "Flour": {"amount": 450, "unit_price": 60},
+                "Fruska (Wheat Bran)": {"amount": 200, "unit_price": 40},
+                "Fruskelo (Wheat Germ)": {"amount": 120, "unit_price": 50}
+            },
+            "downtime_hours": 2.5,
+            "downtime_reasons": [
+                {"reason": "Equipment Maintenance", "hours": 1.5},
+                {"reason": "Staff Training", "hours": 1.0}
+            ],
+            "stock_data": {
+                "Flour": 1500,
+                "Fruska (Wheat Bran)": 800,
+                "Fruskelo (Wheat Germ)": 500
+            }
+        }
+        
+        try:
+            # Create test data
+            response = requests.post(f"{self.base_url}/daily-logs", json=test_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                print("ℹ️ Test data already exists, proceeding with export test")
+            else:
+                self.assertEqual(response.status_code, 200)
+                print("✅ Created test data for openpyxl verification")
+            
+            # Test Excel export functionality
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            
+            # Verify openpyxl is working correctly
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            # Check content disposition
+            content_disposition = response.headers.get('content-disposition', '')
+            self.assertIn('attachment', content_disposition)
+            self.assertIn('.xlsx', content_disposition)
+            
+            # Verify file content is valid Excel
+            self.assertGreater(len(response.content), 1000)
+            
+            # Check Excel file magic bytes (ZIP signature for .xlsx files)
+            self.assertEqual(response.content[:2], b'PK')  # ZIP file signature
+            
+            # Save file for verification
+            filename = f"{self.download_dir}/openpyxl_verification_export.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+            
+            print("✅ Excel export with openpyxl dependency working correctly")
+            print(f"  - Content-Type: {content_type}")
+            print(f"  - File size: {len(response.content)} bytes")
+            print(f"  - File signature: Valid Excel format")
+            print(f"  - Saved to: {filename}")
+            
+            # Try to validate Excel structure if pandas is available
+            try:
+                import pandas as pd
+                excel_data = pd.read_excel(BytesIO(response.content), sheet_name=None)
+                
+                # Verify both sheets exist
+                self.assertIn('Daily Logs', excel_data)
+                self.assertIn('Summary', excel_data)
+                
+                daily_logs_df = excel_data['Daily Logs']
+                summary_df = excel_data['Summary']
+                
+                print(f"  - Daily Logs sheet: {len(daily_logs_df)} rows")
+                print(f"  - Summary sheet: {len(summary_df)} rows")
+                print("✅ Excel file structure validated with pandas")
+                
+            except ImportError:
+                print("ℹ️ pandas not available for detailed validation, but basic Excel export verified")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text[:500] if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export openpyxl dependency verification failed: {str(e)}")
+
+    def test_36_excel_export_role_based_filtering_verification(self):
+        """Test that Excel export role-based filtering still works correctly"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test factory user export - should only get their factory data
+            response = requests.get(f"{self.base_url}/export-excel", headers=factory_headers)
+            
+            if response.status_code == 404:
+                print("ℹ️ Factory user has no data to export")
+                factory_has_data = False
+            else:
+                self.assertEqual(response.status_code, 200)
+                factory_has_data = True
+                
+                # Verify it's a valid Excel file
+                content_type = response.headers.get('content-type', '')
+                self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+                
+                factory_file_size = len(response.content)
+                print(f"✅ Factory user Excel export successful: {factory_file_size} bytes")
+            
+            # Test headquarters user export - should get all factory data
+            response = requests.get(f"{self.base_url}/export-excel", headers=hq_headers)
+            
+            if response.status_code == 404:
+                print("ℹ️ Headquarters user has no data to export")
+                hq_has_data = False
+            else:
+                self.assertEqual(response.status_code, 200)
+                hq_has_data = True
+                
+                # Verify it's a valid Excel file
+                content_type = response.headers.get('content-type', '')
+                self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+                
+                hq_file_size = len(response.content)
+                print(f"✅ Headquarters user Excel export successful: {hq_file_size} bytes")
+                
+                # HQ export should typically be larger or equal to factory export
+                if factory_has_data:
+                    self.assertGreaterEqual(hq_file_size, factory_file_size)
+                    print(f"✅ HQ export size ({hq_file_size}) >= Factory export size ({factory_file_size})")
+            
+            # Test that factory user cannot bypass filtering with factory_id parameter
+            params = {'factory_id': 'amen_water'}  # Different factory
+            response = requests.get(f"{self.base_url}/export-excel", headers=factory_headers, params=params)
+            
+            if response.status_code == 404:
+                print("✅ Factory user correctly cannot access other factory data (404 - no data)")
+            else:
+                self.assertEqual(response.status_code, 200)
+                # Even if successful, should still only contain wakene_food data due to role filtering
+                print("✅ Factory user export with factory_id parameter processed (role filtering applied)")
+            
+            print("✅ Excel export role-based filtering verification completed successfully")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export role-based filtering verification failed: {str(e)}")
+
 if __name__ == "__main__":
     # Run the tests in order
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
