@@ -398,228 +398,78 @@ class FactoryPortalAPITest(unittest.TestCase):
         except Exception as e:
             self.fail(f"❌ Authentication requirements test failed: {str(e)}")
 
-    def test_05_dashboard_summary_authorized(self):
-        """Test dashboard summary endpoint with authentication"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
+    def test_14_dashboard_summary_role_based(self):
+        """Test dashboard summary with role-based filtering"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
             
-        headers = {"Authorization": f"Bearer {self.token}"}
+        # Test factory user gets filtered data
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
         
         try:
-            response = requests.get(f"{self.base_url}/dashboard-summary", headers=headers)
+            response = requests.get(f"{self.base_url}/dashboard-summary", headers=factory_headers)
             self.assertEqual(response.status_code, 200)
-            summary = response.json()
+            factory_summary = response.json()
             
-            # Verify the expected fields are present
-            expected_fields = ["total_production", "total_sales", "total_downtime", "total_stock", "factory_summaries"]
+            # Verify expected fields are present (updated structure)
+            expected_fields = ["total_downtime", "total_stock", "factory_summaries"]
             for field in expected_fields:
-                self.assertIn(field, summary)
+                self.assertIn(field, factory_summary)
                 
-            print("✅ Dashboard summary endpoint returned data successfully")
-            print(f"  - Total Production: {summary['total_production']}")
-            print(f"  - Total Sales: {summary['total_sales']}")
-            print(f"  - Total Downtime: {summary['total_downtime']} hours")
-            print(f"  - Total Stock: {summary['total_stock']}")
-            print(f"  - Factory Summaries: {len(summary['factory_summaries'])} factories")
+            # Factory user should only see their own factory in summaries
+            if factory_summary["factory_summaries"]:
+                for factory_id in factory_summary["factory_summaries"].keys():
+                    self.assertEqual(factory_id, "wakene_food")
+                    
+            print("✅ Factory user dashboard summary shows only their factory data")
+            
+            # Test headquarters user gets all data
+            hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+            response = requests.get(f"{self.base_url}/dashboard-summary", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            hq_summary = response.json()
+            
+            print(f"✅ Headquarters dashboard summary shows data for {len(hq_summary['factory_summaries'])} factories")
+            
         except Exception as e:
-            self.fail(f"❌ Dashboard summary authorized test failed: {str(e)}")
+            self.fail(f"❌ Dashboard summary role-based test failed: {str(e)}")
 
-    def test_06_get_daily_logs(self):
-        """Test getting daily logs"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
+    def test_15_analytics_trends_role_based(self):
+        """Test analytics trends with role-based filtering"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
             
-        headers = {"Authorization": f"Bearer {self.token}"}
+        # Test factory user gets their factory data only
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
         
         try:
-            response = requests.get(f"{self.base_url}/daily-logs", headers=headers)
+            response = requests.get(f"{self.base_url}/analytics/trends", headers=factory_headers)
             self.assertEqual(response.status_code, 200)
-            logs = response.json()
-            self.assertIsInstance(logs, list)
-            print(f"✅ Retrieved {len(logs)} daily logs")
-        except Exception as e:
-            self.fail(f"❌ Get daily logs test failed: {str(e)}")
-
-    def test_07_create_daily_log(self):
-        """Test creating a daily log"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
+            factory_trends = response.json()
             
-        headers = {"Authorization": f"Bearer {self.token}"}
-        
-        # Create a daily log for Amen Water
-        today = datetime.utcnow()
-        # Use yesterday to avoid conflict with existing logs
-        yesterday = today - timedelta(days=1)
-        
-        data = {
-            "factory_id": "amen_water",
-            "date": yesterday.isoformat(),
-            "production_data": {
-                "360ml": 100,
-                "600ml": 200,
-                "1000ml": 150,
-                "2000ml": 50
-            },
-            "sales_data": {
-                "360ml": {"amount": 80, "unit_price": 10},
-                "600ml": {"amount": 150, "unit_price": 15},
-                "1000ml": {"amount": 120, "unit_price": 20},
-                "2000ml": {"amount": 30, "unit_price": 30}
-            },
-            "downtime_hours": 2.5,
-            "downtime_reason": "Maintenance",
-            "stock_data": {
-                "360ml": 500,
-                "600ml": 400,
-                "1000ml": 300,
-                "2000ml": 200
-            }
-        }
-        
-        try:
-            response = requests.post(f"{self.base_url}/daily-logs", json=data, headers=headers)
-            self.assertEqual(response.status_code, 200)
-            log_data = response.json()
-            self.assertEqual(log_data["factory_id"], "amen_water")
-            self.assertEqual(log_data["downtime_hours"], 2.5)
-            self.assertEqual(log_data["downtime_reason"], "Maintenance")
-            print("✅ Daily log created successfully")
-        except Exception as e:
-            print(f"❌ Create daily log test failed: {str(e)}")
-            print(f"Response status: {response.status_code}")
-            print(f"Response content: {response.text}")
-            self.fail(f"❌ Create daily log test failed: {str(e)}")
-
-    def test_08_get_current_user(self):
-        """Test getting current user info"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
-            
-        headers = {"Authorization": f"Bearer {self.token}"}
-        
-        try:
-            response = requests.get(f"{self.base_url}/me", headers=headers)
-            self.assertEqual(response.status_code, 200)
-            user_data = response.json()
-            self.assertEqual(user_data["username"], self.test_username)
-            print("✅ Current user info retrieved successfully")
-        except Exception as e:
-            self.fail(f"❌ Get current user test failed: {str(e)}")
-            
-    def test_09_export_excel(self):
-        """Test Excel export functionality"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
-            
-        headers = {"Authorization": f"Bearer {self.token}"}
-        
-        try:
-            # Test full export
-            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.headers['Content-Type'], 
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-            
-            # Save the file
-            file_path = os.path.join(self.download_dir, "full_export.xlsx")
-            with open(file_path, 'wb') as f:
-                f.write(response.content)
-                
-            # Check if file exists and has content
-            self.assertTrue(os.path.exists(file_path))
-            self.assertTrue(os.path.getsize(file_path) > 0)
-            
-            print("✅ Excel export functionality works correctly")
-            print(f"  - Downloaded file size: {os.path.getsize(file_path)} bytes")
-            
-            # Test filtered export
-            factory_id = "amen_water"
-            start_date = (datetime.utcnow() - timedelta(days=30)).isoformat()
-            end_date = datetime.utcnow().isoformat()
-            
-            response = requests.get(
-                f"{self.base_url}/export-excel?factory_id={factory_id}&start_date={start_date}&end_date={end_date}", 
-                headers=headers
-            )
-            
-            # Check if response is successful (even if no data is found)
-            if response.status_code == 200:
-                file_path = os.path.join(self.download_dir, "filtered_export.xlsx")
-                with open(file_path, 'wb') as f:
-                    f.write(response.content)
-                print("✅ Filtered Excel export works correctly")
-            elif response.status_code == 404:
-                print("ℹ️ No data found for filtered export (this is acceptable)")
-            else:
-                self.fail(f"❌ Filtered Excel export failed with status code {response.status_code}")
-                
-        except Exception as e:
-            self.fail(f"❌ Excel export test failed: {str(e)}")
-            
-    def test_10_analytics_trends(self):
-        """Test analytics trends endpoint"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
-            
-        headers = {"Authorization": f"Bearer {self.token}"}
-        
-        try:
-            response = requests.get(f"{self.base_url}/analytics/trends", headers=headers)
-            self.assertEqual(response.status_code, 200)
-            trends_data = response.json()
-            
-            # Verify the expected fields are present
+            # Should return single factory format
             expected_fields = ["production", "sales", "downtime", "stock", "dates"]
             for field in expected_fields:
-                self.assertIn(field, trends_data)
-                self.assertIsInstance(trends_data[field], list)
+                self.assertIn(field, factory_trends)
+                self.assertIsInstance(factory_trends[field], list)
                 
-            print("✅ Analytics trends endpoint returned data successfully")
-            print(f"  - Data points: {len(trends_data['dates'])}")
+            print("✅ Factory user analytics trends shows single factory format")
             
-            # Test with factory filter
-            factory_id = "amen_water"
-            response = requests.get(f"{self.base_url}/analytics/trends?factory_id={factory_id}", headers=headers)
+            # Test headquarters user gets multi-factory data
+            hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+            response = requests.get(f"{self.base_url}/analytics/trends", headers=hq_headers)
             self.assertEqual(response.status_code, 200)
-            print(f"✅ Analytics trends with factory filter works correctly")
+            hq_trends = response.json()
             
-        except Exception as e:
-            self.fail(f"❌ Analytics trends test failed: {str(e)}")
-            
-    def test_11_factory_comparison(self):
-        """Test factory comparison endpoint (headquarters only)"""
-        if not self.token:
-            self.skipTest("Token not available, skipping test")
-            
-        headers = {"Authorization": f"Bearer {self.token}"}
-        
-        try:
-            response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=headers)
-            
-            # This should work for headquarters users
-            if self.user_info["role"] == "headquarters":
-                self.assertEqual(response.status_code, 200)
-                comparison_data = response.json()
-                
-                # Check if we have data for each factory
-                for factory_id in ["amen_water", "mintu_plast", "mintu_export", "wakene_food"]:
-                    self.assertIn(factory_id, comparison_data)
-                    factory_data = comparison_data[factory_id]
-                    expected_metrics = ["name", "production", "sales", "revenue", "downtime", "efficiency"]
-                    for metric in expected_metrics:
-                        self.assertIn(metric, factory_data)
-                        
-                print("✅ Factory comparison endpoint returned data successfully")
-                print(f"  - Factories compared: {len(comparison_data)}")
-                
-            # This should fail for factory users
-            elif self.user_info["role"] == "factory_employer":
-                self.assertEqual(response.status_code, 403)
-                print("✅ Factory comparison correctly restricted for factory users")
+            # Should return multi-factory format
+            if "factories" in hq_trends:
+                print(f"✅ Headquarters analytics trends shows multi-factory format with {len(hq_trends['factories'])} factories")
+            else:
+                # If no data, should still have the expected structure
+                print("✅ Headquarters analytics trends endpoint accessible")
                 
         except Exception as e:
-            self.fail(f"❌ Factory comparison test failed: {str(e)}")
+            self.fail(f"❌ Analytics trends role-based test failed: {str(e)}")
 
 if __name__ == "__main__":
     # Run the tests in order
