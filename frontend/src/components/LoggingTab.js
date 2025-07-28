@@ -84,7 +84,7 @@ const LoggingTab = () => {
 
         const newTotal = totalAllocatedHours + hours;
         if (newTotal > formData.downtime_hours) {
-            toast.error(`Total allocated hours (${newTotal}) cannot exceed total downtime hours (${formData.downtime_hours})`);
+            toast.error(`Total allocated hours cannot exceed total downtime hours (${formData.downtime_hours})`);
             return;
         }
 
@@ -234,11 +234,7 @@ const LoggingTab = () => {
         }
     };
 
-    const handleDowntimeHoursChange = (e) => {
-        const hours = parseFloat(e.target.value) || 0;
-        setFormData({ ...formData, downtime_hours: hours });
-        
-        // If reducing hours below current allocated total, show warning
+    const handleDowntimeHoursChange = (hours) => {
         if (hours < totalAllocatedHours) {
             toast.warning(`Reducing downtime hours below allocated total (${totalAllocatedHours}). Please adjust reasons.`);
         }
@@ -246,69 +242,40 @@ const LoggingTab = () => {
 
     const remainingHours = formData.downtime_hours - totalAllocatedHours;
 
-    return (
-        <div className="space-y-6">
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-lg shadow-md">
-                <div className="border-b border-gray-200">
-                    <nav className="flex space-x-8 px-6">
-                        <button
-                            onClick={() => setActiveTab('create')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'create'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            Create New Log
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('manage')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'manage'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            Manage Existing Logs
-                        </button>
-                    </nav>
+    // Helper function to render the form (used in both create and edit)
+    const renderForm = (onSubmit, isEditing = false) => (
+        <form onSubmit={onSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Factory</label>
+                    <select
+                        value={selectedFactory}
+                        onChange={(e) => setSelectedFactory(e.target.value)}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                        disabled={isEditing && user?.role === 'factory_employer'}
+                    >
+                        <option value="">Select Factory</option>
+                        {Object.entries(factories || {}).map(([key, factory]) => (
+                            <option key={key} value={key}>{factory.name}</option>
+                        ))}
+                    </select>
                 </div>
-
-                {/* Tab Content */}
-                <div className="p-6">
-                    {activeTab === 'create' && (
-                        <div>
-                            <h2 className="text-2xl font-bold text-primary mb-6">Create Daily Production Log</h2>
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Factory</label>
-                        <select
-                            value={selectedFactory}
-                            onChange={(e) => setSelectedFactory(e.target.value)}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        >
-                            <option value="">Select Factory</option>
-                            {Object.entries(factories || {}).map(([key, factory]) => (
-                                <option key={key} value={key}>{factory.name}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-                        <input
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                            required
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                        />
-                    </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                    <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        required
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
                 </div>
+            </div>
 
-                {/* Downtime Section */}
+            {/* Downtime Section */}
+            <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4">Downtime Information</h3>
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Total Downtime Hours</label>
@@ -317,25 +284,27 @@ const LoggingTab = () => {
                             min="0"
                             step="0.1"
                             value={formData.downtime_hours}
-                            onChange={handleDowntimeHoursChange}
+                            onChange={(e) => {
+                                const hours = parseFloat(e.target.value) || 0;
+                                setFormData({ ...formData, downtime_hours: hours });
+                                handleDowntimeHoursChange(hours);
+                            }}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                         />
                     </div>
 
-                    {/* Downtime Reasons Section */}
                     {formData.downtime_hours > 0 && (
                         <div className="bg-gray-50 rounded-lg p-4">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4">Downtime Breakdown</h3>
+                            <h4 className="text-md font-medium text-gray-700 mb-3">Add Downtime Reasons</h4>
                             
-                            {/* Add Reason Form */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
                                     <input
                                         type="text"
                                         value={currentReason}
                                         onChange={(e) => setCurrentReason(e.target.value)}
-                                        placeholder="e.g., Machine failure"
+                                        placeholder="e.g., Equipment Maintenance"
                                         className="w-full px-3 py-2 border border-gray-300 rounded-md"
                                     />
                                 </div>
@@ -396,93 +365,300 @@ const LoggingTab = () => {
                         </div>
                     )}
                 </div>
+            </div>
 
-                {selectedFactory && factories[selectedFactory]?.products?.length > 0 && (
-                    <div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Products</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {factories[selectedFactory].products.map((product) => (
-                                <div key={product} className="border rounded p-4 space-y-2">
-                                    <h4 className="font-medium text-gray-700">{product}</h4>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="Production"
-                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                production_data: {
-                                                    ...formData.production_data,
-                                                    [product]: parseFloat(e.target.value) || 0,
+            {/* Products Section */}
+            {selectedFactory && factories[selectedFactory]?.products?.length > 0 && (
+                <div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Products</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {factories[selectedFactory].products.map((product) => (
+                            <div key={product} className="border rounded p-4 space-y-2">
+                                <h4 className="font-medium text-gray-700">{product}</h4>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Production"
+                                    value={formData.production_data[product] || ''}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            production_data: {
+                                                ...formData.production_data,
+                                                [product]: parseFloat(e.target.value) || 0,
+                                            },
+                                        })
+                                    }
+                                />
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Sales Amount"
+                                    value={formData.sales_data[product]?.amount || ''}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            sales_data: {
+                                                ...formData.sales_data,
+                                                [product]: {
+                                                    ...(formData.sales_data[product] || {}),
+                                                    amount: parseFloat(e.target.value) || 0,
                                                 },
-                                            })
-                                        }
-                                    />
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="Sales Amount"
-                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                sales_data: {
-                                                    ...formData.sales_data,
-                                                    [product]: {
-                                                        ...(formData.sales_data[product] || {}),
-                                                        amount: parseFloat(e.target.value) || 0,
-                                                    },
+                                            },
+                                        })
+                                    }
+                                />
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Unit Price"
+                                    value={formData.sales_data[product]?.unit_price || ''}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            sales_data: {
+                                                ...formData.sales_data,
+                                                [product]: {
+                                                    ...(formData.sales_data[product] || {}),
+                                                    unit_price: parseFloat(e.target.value) || 0,
                                                 },
-                                            })
-                                        }
-                                    />
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="Unit Price"
-                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                sales_data: {
-                                                    ...formData.sales_data,
-                                                    [product]: {
-                                                        ...(formData.sales_data[product] || {}),
-                                                        unit_price: parseFloat(e.target.value) || 0,
-                                                    },
-                                                },
-                                            })
-                                        }
-                                    />
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        placeholder="Current Stock"
-                                        className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                stock_data: {
-                                                    ...formData.stock_data,
-                                                    [product]: parseFloat(e.target.value) || 0,
-                                                },
-                                            })
-                                        }
-                                    />
+                                            },
+                                        })
+                                    }
+                                />
+                                <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Current Stock"
+                                    value={formData.stock_data[product] || ''}
+                                    className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                    onChange={(e) =>
+                                        setFormData({
+                                            ...formData,
+                                            stock_data: {
+                                                ...formData.stock_data,
+                                                [product]: parseFloat(e.target.value) || 0,
+                                            },
+                                        })
+                                    }
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <button
+                type="submit"
+                className="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-6 rounded-md"
+            >
+                {isEditing ? 'Update Daily Log' : 'Submit Daily Log'}
+            </button>
+        </form>
+    );
+
+    return (
+        <div className="space-y-6">
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-lg shadow-md">
+                <div className="border-b border-gray-200">
+                    <nav className="flex space-x-8 px-6">
+                        <button
+                            onClick={() => setActiveTab('create')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'create'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Create New Log
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('manage')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'manage'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Manage Existing Logs
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-6">
+                    {activeTab === 'create' && (
+                        <div>
+                            <h2 className="text-2xl font-bold text-primary mb-6">Create Daily Production Log</h2>
+                            {renderForm(handleSubmit, false)}
+                        </div>
+                    )}
+
+                    {activeTab === 'manage' && (
+                        <div>
+                            <h2 className="text-2xl font-bold text-primary mb-6">Manage Existing Logs</h2>
+                            
+                            {loading ? (
+                                <div className="flex justify-center items-center py-8">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                    <span className="ml-2 text-gray-600">Loading logs...</span>
                                 </div>
-                            ))}
+                            ) : existingLogs.length === 0 ? (
+                                <div className="text-center py-8 text-gray-500">
+                                    <p>No daily logs found. Create your first log using the "Create New Log" tab.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {existingLogs.map((log) => {
+                                        const factory = factories[log.factory_id];
+                                        const isOwnLog = log.created_by === user?.username;
+                                        
+                                        return (
+                                            <div key={log.id} className="bg-gray-50 rounded-lg p-4 border">
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <h3 className="text-lg font-medium text-gray-800">
+                                                                {factory?.name || log.factory_id}
+                                                            </h3>
+                                                            <span className="text-sm text-gray-500">
+                                                                {new Date(log.date).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+                                                            <div>
+                                                                <span className="font-medium">Total Production:</span>
+                                                                <br />
+                                                                {Object.values(log.production_data).reduce((sum, val) => sum + val, 0)} {factory?.sku_unit || 'units'}
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-medium">Total Sales:</span>
+                                                                <br />
+                                                                {Object.values(log.sales_data).reduce((sum, item) => sum + (item.amount || 0), 0)} {factory?.sku_unit || 'units'}
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-medium">Downtime:</span>
+                                                                <br />
+                                                                {log.downtime_hours} hours
+                                                            </div>
+                                                            <div>
+                                                                <span className="font-medium">Created by:</span>
+                                                                <br />
+                                                                {log.created_by}
+                                                            </div>
+                                                        </div>
+
+                                                        {log.downtime_reasons && log.downtime_reasons.length > 0 && (
+                                                            <div className="mb-3">
+                                                                <span className="font-medium text-gray-700 text-sm">Downtime Reasons:</span>
+                                                                <div className="flex flex-wrap gap-2 mt-1">
+                                                                    {log.downtime_reasons.map((reason, index) => (
+                                                                        <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                                                            {reason.reason} ({reason.hours}h)
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {isOwnLog && (
+                                                        <div className="flex space-x-2 ml-4">
+                                                            <button
+                                                                onClick={() => handleEditLog(log)}
+                                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-medium"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteLog(log)}
+                                                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-medium"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Edit Modal */}
+            {showEditModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                        <div className="p-6">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-primary">Edit Daily Log</h2>
+                                <button
+                                    onClick={() => {
+                                        setShowEditModal(false);
+                                        setEditingLog(null);
+                                        resetForm();
+                                    }}
+                                    className="text-gray-400 hover:text-gray-600"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+                            {renderForm(handleUpdateLog, true)}
                         </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                <button
-                    type="submit"
-                    className="w-full bg-primary hover:bg-primary-dark text-white font-medium py-3 px-6 rounded-md"
-                >
-                    Submit Daily Log
-                </button>
-            </form>
+            {/* Delete Confirmation Dialog */}
+            {showDeleteConfirm && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+                        <div className="p-6">
+                            <div className="flex items-center mb-4">
+                                <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                                    <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <div className="text-center">
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Daily Log</h3>
+                                <p className="text-sm text-gray-500 mb-4">
+                                    Are you sure you want to delete this daily log for {factories[deletingLog?.factory_id]?.name} on {new Date(deletingLog?.date).toLocaleDateString()}? This action cannot be undone.
+                                </p>
+                                <div className="flex justify-center space-x-4">
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteConfirm(false);
+                                            setDeletingLog(null);
+                                        }}
+                                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded font-medium"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDeleteLog}
+                                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-medium"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
