@@ -120,6 +120,21 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: Multi-reason downtime logging works correctly. Successfully created daily log with 3 downtime reasons (Equipment Maintenance: 2.5h, Power Outage: 1.0h, Staff Training: 0.5h) totaling 4.0 hours. API correctly accepts downtime_reasons as list of objects with reason and hours fields."
 
+  - task: "Add daily log edit/delete permissions (users can only edit/delete their own logs)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added PUT /api/daily-logs/{log_id} and DELETE /api/daily-logs/{log_id} endpoints with proper authorization. Only creators can edit/delete their own logs. Added DailyLogUpdate model for partial updates."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Daily log edit/delete functionality working perfectly. Users can edit all fields of their own logs (production_data, sales_data, downtime_hours, downtime_reasons, stock_data). Authorization correctly prevents editing/deleting other users' logs (403 Forbidden). All edge cases handled: 404 for non-existent logs, 403 for unauthorized factory changes, 400 for date conflicts."
+
   - task: "Update Factory Comparison Analytics to show today's data only"
     implemented: true
     working: true
