@@ -731,7 +731,9 @@ const DashboardTab = () => {
             {user?.role === 'headquarters' && Object.keys(comparisonData || {}).length > 0 && (
                 <div className="space-y-6">
                     <div className="bg-gray-50 rounded-lg p-6">
-                        <h2 className="text-xl font-bold text-gray-800 mb-6">Factory Comparison Analytics</h2>
+                        <h2 className="text-xl font-bold text-gray-800 mb-6">
+                            Factory Comparison Analytics - Today ({new Date().toLocaleDateString()})
+                        </h2>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             <div className="bg-white rounded-lg shadow p-6">
                                 <h3 className="text-lg font-semibold mb-4">Production Comparison</h3>
