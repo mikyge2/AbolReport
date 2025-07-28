@@ -247,9 +247,40 @@ const LoggingTab = () => {
     const remainingHours = formData.downtime_hours - totalAllocatedHours;
 
     return (
-        <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-bold text-primary mb-6">Daily Production Log</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-6">
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-lg shadow-md">
+                <div className="border-b border-gray-200">
+                    <nav className="flex space-x-8 px-6">
+                        <button
+                            onClick={() => setActiveTab('create')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'create'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Create New Log
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('manage')}
+                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                                activeTab === 'manage'
+                                    ? 'border-primary text-primary'
+                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                            }`}
+                        >
+                            Manage Existing Logs
+                        </button>
+                    </nav>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-6">
+                    {activeTab === 'create' && (
+                        <div>
+                            <h2 className="text-2xl font-bold text-primary mb-6">Create Daily Production Log</h2>
+                            <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Factory</label>
