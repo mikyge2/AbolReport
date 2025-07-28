@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 class FactoryPortalAPITest(unittest.TestCase):
     def setUp(self):
         # Get the backend URL from the frontend .env file
-        self.base_url = "https://1bfaaac1-5e84-4d00-b041-a30f1f53362b.preview.emergentagent.com/api"
+        self.base_url = "https://db3bb479-5918-43d2-852b-be41ab9c1d2c.preview.emergentagent.com/api"
         self.hq_token = None
         self.hq_user_info = None
         self.factory_token = None
