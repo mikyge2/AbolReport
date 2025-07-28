@@ -16,6 +16,7 @@ const UserManagementTab = () => {
         lastName: '',
         username: '',
         password: '',
+        role: 'factory_employer',
         factoryId: '',
     });
 
