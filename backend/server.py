@@ -89,8 +89,10 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
-    role: str
+    role: str = "factory_employer"  # Default role
     factory_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
 
 class UserLogin(BaseModel):
     username: str
