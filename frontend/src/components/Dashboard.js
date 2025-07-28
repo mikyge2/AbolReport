@@ -96,52 +96,30 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'dashboard'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab('logging')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'logging'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              Daily Logging
-            </button>
-            <button
-              onClick={() => setActiveTab('reports')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'reports'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-            >
-              Reports & Analytics
-            </button>
-            {user?.role === 'headquarters' && (
+            {tabs.map((tab) => (
               <button
-                onClick={() => setActiveTab('users')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'users'
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                  activeTab === tab.id
                     ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+                disabled={isTabLoading}
               >
-                User Management
+                {tab.label}
+                {isTabLoading && activeTab === tab.id && (
+                  <span className="ml-2 inline-block w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin"></span>
+                )}
               </button>
-            )}
+            ))}
           </nav>
         </div>
 
-        {activeTab === 'dashboard' && <DashboardTab />}
-        {activeTab === 'logging' && <LoggingTab />}
-        {activeTab === 'reports' && <ReportsTab />}
-        {activeTab === 'users' && <UserManagementTab />}
-
+        {/* Tab Content */}
+        <div className="transition-all duration-300 ease-in-out">
+          {renderActiveTab()}
+        </div>
       </div>
     </div>
   );
