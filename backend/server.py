@@ -75,6 +75,8 @@ class User(BaseModel):
     password_hash: str
     role: str  # "factory_employer" or "headquarters"
     factory_id: Optional[str] = None  # Only for factory employers
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class UserResponse(BaseModel):
