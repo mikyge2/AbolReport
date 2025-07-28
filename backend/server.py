@@ -132,6 +132,15 @@ class DailyLogCreate(BaseModel):
     downtime_reasons: List[DowntimeReason]  # Updated to support multiple reasons
     stock_data: Dict[str, float]
 
+class DailyLogUpdate(BaseModel):
+    factory_id: Optional[str] = None
+    date: Optional[datetime] = None
+    production_data: Optional[Dict[str, float]] = None
+    sales_data: Optional[Dict[str, Dict[str, float]]] = None
+    downtime_hours: Optional[float] = None
+    downtime_reasons: Optional[List[DowntimeReason]] = None
+    stock_data: Optional[Dict[str, float]] = None
+
 # Authentication functions
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
