@@ -367,6 +367,10 @@ async def update_user(user_id: str, updated_data: dict, current_user: User = Dep
         updates["last_name"] = updated_data["last_name"]
     if "username" in updated_data:
         updates["username"] = updated_data["username"]
+    if "email" in updated_data:
+        updates["email"] = updated_data["email"]
+    if "role" in updated_data:
+        updates["role"] = updated_data["role"]
     if "password" in updated_data and updated_data["password"]:
         updates["password_hash"] = get_password_hash(updated_data["password"])
     if "factory_id" in updated_data:
@@ -382,6 +386,8 @@ async def update_user(user_id: str, updated_data: dict, current_user: User = Dep
         email=user["email"],
         role=user["role"],
         factory_id=user.get("factory_id"),
+        first_name=user.get("first_name"),
+        last_name=user.get("last_name"),
         created_at=user["created_at"]
     )
 
