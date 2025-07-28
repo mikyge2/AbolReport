@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Continue task request: Dashboard Tab - In 'All Factories - Production vs Sales Daily Trends (Last 30 Days)', show 3 line graphs for Wakene, Amen, and Mintu (Export & Plast). Use dummy data for now. In 'Factory Comparison Analytics', make the stats reflect the current date. Show only the factory graphs based on the user's assigned factory. Example: Wakene users see only Wakene data. Only users with the 'headquarters' role can see all factories. Daily Logging Tab - For downtime reasons, require user to input how many hours it lasted. Report & Analytics Tab - Only show Total Revenue and Total Downtime at the top. Remove Total Production and Total Sales. Apply same role-based filtering: Factory users see only their own factory, Headquarters users see everything. User Management Tab - This tab should only be visible for headquarters users. Add backend logic to make user management fully functional."
+user_problem_statement: "Continue task request: Dashboard – Mintu Plast: For Mintu Plast, please prepare two separate graphs: One for Preform, One for Cap. Manage Existing Logs: On the "Manage Existing Logs" section, only show logs created by the logged-in user (i.e., logs they are allowed to edit or delete). Excel Export Fix: The Excel export function is not currently working. Please fix it. Also, ensure that: Factory users can only export data related to their own factory, Headquarter users can export data from all factories"
 
 backend:
   - task: "Update DailyLog model to support multiple downtime reasons"
