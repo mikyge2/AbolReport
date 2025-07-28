@@ -387,12 +387,13 @@ async def export_excel_report(
         sku_unit = FACTORIES.get(log["factory_id"], {}).get("sku_unit", "Unit")
         
         # Base row data
+        downtime_reasons_str = "; ".join([f"{reason['reason']} ({reason['hours']}h)" for reason in log.get("downtime_reasons", [])])
         base_row = {
             "Date": log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"],
             "Factory": factory_name,
             "SKU Unit": sku_unit,
             "Downtime Hours": log["downtime_hours"],
-            "Downtime Reason": log["downtime_reason"],
+            "Downtime Reasons": downtime_reasons_str,
             "Created By": log["created_by"]
         }
         
