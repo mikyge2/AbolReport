@@ -57,7 +57,7 @@ const LoggingTab = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get(`${API}/daily-logs`, {
+            const res = await axios.get(`${API}/daily-logs?created_by_me=true`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
