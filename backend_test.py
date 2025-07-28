@@ -3,6 +3,7 @@ import unittest
 import json
 import os
 from datetime import datetime, timedelta
+from io import BytesIO
 
 class FactoryPortalAPITest(unittest.TestCase):
     def setUp(self):
