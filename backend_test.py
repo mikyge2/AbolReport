@@ -49,11 +49,11 @@ class FactoryPortalAPITest(unittest.TestCase):
         except Exception as e:
             self.fail(f"❌ Get factories test failed: {str(e)}")
 
-    def test_03_login_user(self):
-        """Test user login endpoint with demo credentials"""
+    def test_03_login_headquarters_user(self):
+        """Test headquarters user login"""
         data = {
-            "username": self.test_username,
-            "password": self.test_password
+            "username": self.hq_username,
+            "password": self.hq_password
         }
         
         try:
@@ -62,14 +62,74 @@ class FactoryPortalAPITest(unittest.TestCase):
             login_data = response.json()
             self.assertIn("access_token", login_data)
             self.assertIn("user_info", login_data)
-            self.assertEqual(login_data["user_info"]["username"], self.test_username)
+            self.assertEqual(login_data["user_info"]["username"], self.hq_username)
+            self.assertEqual(login_data["user_info"]["role"], "headquarters")
             
             # Save token for subsequent tests
-            self.token = login_data["access_token"]
-            self.user_info = login_data["user_info"]
-            print(f"✅ User login successful: {self.test_username}")
+            self.hq_token = login_data["access_token"]
+            self.hq_user_info = login_data["user_info"]
+            print(f"✅ Headquarters user login successful: {self.hq_username}")
         except Exception as e:
-            self.fail(f"❌ User login test failed: {str(e)}")
+            self.fail(f"❌ Headquarters user login test failed: {str(e)}")
+
+    def test_04_create_factory_user(self):
+        """Test creating a factory user via user management endpoint"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create a factory user for testing
+        user_data = {
+            "username": "wakene_manager",
+            "email": "wakene@company.com",
+            "password": "wakene123",
+            "role": "factory_employer",
+            "factory_id": "wakene_food",
+            "first_name": "Wakene",
+            "last_name": "Manager"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/users", json=user_data, headers=headers)
+            if response.status_code == 400 and "already registered" in response.text:
+                print("ℹ️ Factory user already exists, continuing with tests")
+            else:
+                self.assertEqual(response.status_code, 200)
+                created_user = response.json()
+                self.assertEqual(created_user["username"], "wakene_manager")
+                self.assertEqual(created_user["role"], "factory_employer")
+                self.assertEqual(created_user["factory_id"], "wakene_food")
+                self.assertEqual(created_user["first_name"], "Wakene")
+                self.assertEqual(created_user["last_name"], "Manager")
+                print("✅ Factory user created successfully via user management endpoint")
+                
+        except Exception as e:
+            self.fail(f"❌ Create factory user test failed: {str(e)}")
+
+    def test_05_login_factory_user(self):
+        """Test factory user login"""
+        data = {
+            "username": "wakene_manager",
+            "password": "wakene123"
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/login", json=data)
+            self.assertEqual(response.status_code, 200)
+            login_data = response.json()
+            self.assertIn("access_token", login_data)
+            self.assertIn("user_info", login_data)
+            self.assertEqual(login_data["user_info"]["username"], "wakene_manager")
+            self.assertEqual(login_data["user_info"]["role"], "factory_employer")
+            self.assertEqual(login_data["user_info"]["factory_id"], "wakene_food")
+            
+            # Save token for subsequent tests
+            self.factory_token = login_data["access_token"]
+            self.factory_user_info = login_data["user_info"]
+            print(f"✅ Factory user login successful: wakene_manager")
+        except Exception as e:
+            self.fail(f"❌ Factory user login test failed: {str(e)}")
 
     def test_04_dashboard_summary_unauthorized(self):
         """Test dashboard summary endpoint without authentication"""
