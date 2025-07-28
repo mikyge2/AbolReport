@@ -122,11 +122,12 @@ const UserManagementTab = () => {
     const handleEdit = (user) => {
         setEditingUserId(user.id);
         setForm({
-            firstName: user.first_name,
-            lastName: user.last_name,
+            firstName: user.first_name || '',
+            lastName: user.last_name || '',
             username: user.username,
             password: '',
-            factoryId: user.factory_id,
+            role: user.role,
+            factoryId: user.factory_id || '',
         });
     };
 
