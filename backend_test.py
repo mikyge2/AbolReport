@@ -471,6 +471,397 @@ class FactoryPortalAPITest(unittest.TestCase):
         except Exception as e:
             self.fail(f"❌ Analytics trends role-based test failed: {str(e)}")
 
+    def test_16_daily_log_edit_own_log(self):
+        """Test editing own daily log - should succeed"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # First create a daily log
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=5)  # Use 5 days ago to avoid conflicts
+        
+        create_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 300,
+                "Fruska (Wheat Bran)": 150
+            },
+            "sales_data": {
+                "Flour": {"amount": 250, "unit_price": 45},
+                "Fruska (Wheat Bran)": {"amount": 100, "unit_price": 25}
+            },
+            "downtime_hours": 2.0,
+            "downtime_reasons": [
+                {"reason": "Equipment Check", "hours": 2.0}
+            ],
+            "stock_data": {
+                "Flour": 800,
+                "Fruska (Wheat Bran)": 400
+            }
+        }
+        
+        try:
+            # Create the log
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                # Try with a different date
+                create_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            log_id = created_log["id"]
+            
+            # Now edit the log - update all fields
+            update_data = {
+                "production_data": {
+                    "Flour": 350,
+                    "Fruska (Wheat Bran)": 175,
+                    "Fruskelo (Wheat Germ)": 50  # Add new product
+                },
+                "sales_data": {
+                    "Flour": {"amount": 300, "unit_price": 50},
+                    "Fruska (Wheat Bran)": {"amount": 125, "unit_price": 30},
+                    "Fruskelo (Wheat Germ)": {"amount": 40, "unit_price": 35}
+                },
+                "downtime_hours": 3.5,
+                "downtime_reasons": [
+                    {"reason": "Equipment Maintenance", "hours": 2.0},
+                    {"reason": "Staff Break", "hours": 1.5}
+                ],
+                "stock_data": {
+                    "Flour": 900,
+                    "Fruska (Wheat Bran)": 450,
+                    "Fruskelo (Wheat Germ)": 250
+                }
+            }
+            
+            response = requests.put(f"{self.base_url}/daily-logs/{log_id}", json=update_data, headers=headers)
+            self.assertEqual(response.status_code, 200)
+            updated_log = response.json()
+            
+            # Verify all fields were updated
+            self.assertEqual(updated_log["production_data"]["Flour"], 350)
+            self.assertEqual(updated_log["production_data"]["Fruskelo (Wheat Germ)"], 50)
+            self.assertEqual(updated_log["downtime_hours"], 3.5)
+            self.assertEqual(len(updated_log["downtime_reasons"]), 2)
+            self.assertEqual(updated_log["sales_data"]["Flour"]["unit_price"], 50)
+            self.assertEqual(updated_log["stock_data"]["Fruskelo (Wheat Germ)"], 250)
+            
+            print("✅ Successfully edited own daily log - all fields updated correctly")
+            print(f"  - Updated production data: {len(updated_log['production_data'])} products")
+            print(f"  - Updated downtime: {updated_log['downtime_hours']} hours with {len(updated_log['downtime_reasons'])} reasons")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Edit own daily log test failed: {str(e)}")
+
+    def test_17_daily_log_edit_permission_denied(self):
+        """Test editing another user's daily log - should get 403 Forbidden"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create a log as factory user
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=6)
+        
+        create_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {"Flour": 200},
+            "sales_data": {"Flour": {"amount": 150, "unit_price": 40}},
+            "downtime_hours": 1.0,
+            "downtime_reasons": [{"reason": "Break", "hours": 1.0}],
+            "stock_data": {"Flour": 600}
+        }
+        
+        try:
+            # Create log as factory user
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=factory_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                create_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=factory_headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            log_id = created_log["id"]
+            
+            # Try to edit as HQ user (different user) - should fail
+            update_data = {"production_data": {"Flour": 250}}
+            
+            response = requests.put(f"{self.base_url}/daily-logs/{log_id}", json=update_data, headers=hq_headers)
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("You can only edit your own daily logs", response.text)
+            
+            print("✅ Edit permission correctly denied - users can only edit their own logs")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Edit permission denied test failed: {str(e)}")
+
+    def test_18_daily_log_delete_own_log(self):
+        """Test deleting own daily log - should succeed"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create a log to delete
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=7)
+        
+        create_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {"Flour": 100},
+            "sales_data": {"Flour": {"amount": 80, "unit_price": 35}},
+            "downtime_hours": 0.5,
+            "downtime_reasons": [{"reason": "Quick Check", "hours": 0.5}],
+            "stock_data": {"Flour": 500}
+        }
+        
+        try:
+            # Create the log
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                create_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            log_id = created_log["id"]
+            
+            # Delete the log
+            response = requests.delete(f"{self.base_url}/daily-logs/{log_id}", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            delete_response = response.json()
+            self.assertIn("deleted successfully", delete_response["message"])
+            
+            # Verify log is actually deleted by trying to fetch it
+            response = requests.get(f"{self.base_url}/daily-logs", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            logs = response.json()
+            
+            # Check that our deleted log is not in the list
+            log_ids = [log["id"] for log in logs]
+            self.assertNotIn(log_id, log_ids)
+            
+            print("✅ Successfully deleted own daily log - log removed from database")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Delete own daily log test failed: {str(e)}")
+
+    def test_19_daily_log_delete_permission_denied(self):
+        """Test deleting another user's daily log - should get 403 Forbidden"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create a log as factory user
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=8)
+        
+        create_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {"Flour": 150},
+            "sales_data": {"Flour": {"amount": 120, "unit_price": 42}},
+            "downtime_hours": 1.5,
+            "downtime_reasons": [{"reason": "Maintenance", "hours": 1.5}],
+            "stock_data": {"Flour": 700}
+        }
+        
+        try:
+            # Create log as factory user
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=factory_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                create_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=factory_headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            log_id = created_log["id"]
+            
+            # Try to delete as HQ user (different user) - should fail
+            response = requests.delete(f"{self.base_url}/daily-logs/{log_id}", headers=hq_headers)
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("You can only delete your own daily logs", response.text)
+            
+            print("✅ Delete permission correctly denied - users can only delete their own logs")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Delete permission denied test failed: {str(e)}")
+
+    def test_20_daily_log_edit_nonexistent_log(self):
+        """Test editing non-existent log - should get 404"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Try to edit a non-existent log
+        fake_log_id = "non-existent-log-id-12345"
+        update_data = {"production_data": {"Flour": 100}}
+        
+        try:
+            response = requests.put(f"{self.base_url}/daily-logs/{fake_log_id}", json=update_data, headers=headers)
+            self.assertEqual(response.status_code, 404)
+            self.assertIn("Daily log not found", response.text)
+            
+            print("✅ Edit non-existent log correctly returns 404")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Edit non-existent log test failed: {str(e)}")
+
+    def test_21_daily_log_delete_nonexistent_log(self):
+        """Test deleting non-existent log - should get 404"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Try to delete a non-existent log
+        fake_log_id = "non-existent-log-id-67890"
+        
+        try:
+            response = requests.delete(f"{self.base_url}/daily-logs/{fake_log_id}", headers=headers)
+            self.assertEqual(response.status_code, 404)
+            self.assertIn("Daily log not found", response.text)
+            
+            print("✅ Delete non-existent log correctly returns 404")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Delete non-existent log test failed: {str(e)}")
+
+    def test_22_daily_log_edit_unauthorized_factory_change(self):
+        """Test changing factory_id to unauthorized factory - should get 403"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create a log first
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=9)
+        
+        create_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {"Flour": 200},
+            "sales_data": {"Flour": {"amount": 150, "unit_price": 40}},
+            "downtime_hours": 1.0,
+            "downtime_reasons": [{"reason": "Test", "hours": 1.0}],
+            "stock_data": {"Flour": 600}
+        }
+        
+        try:
+            # Create the log
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                create_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            log_id = created_log["id"]
+            
+            # Try to change factory_id to unauthorized factory
+            update_data = {"factory_id": "amen_water"}  # Factory user can't access this
+            
+            response = requests.put(f"{self.base_url}/daily-logs/{log_id}", json=update_data, headers=headers)
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("Access denied to this factory", response.text)
+            
+            print("✅ Unauthorized factory change correctly denied with 403")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Unauthorized factory change test failed: {str(e)}")
+
+    def test_23_daily_log_edit_date_conflict(self):
+        """Test changing date to one that already exists - should get 400 conflict"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create two logs with different dates
+        today = datetime.utcnow()
+        date1 = today - timedelta(days=10)
+        date2 = today - timedelta(days=11)
+        
+        create_data1 = {
+            "factory_id": "wakene_food",
+            "date": date1.isoformat(),
+            "production_data": {"Flour": 100},
+            "sales_data": {"Flour": {"amount": 80, "unit_price": 35}},
+            "downtime_hours": 0.5,
+            "downtime_reasons": [{"reason": "Test1", "hours": 0.5}],
+            "stock_data": {"Flour": 500}
+        }
+        
+        create_data2 = {
+            "factory_id": "wakene_food",
+            "date": date2.isoformat(),
+            "production_data": {"Flour": 120},
+            "sales_data": {"Flour": {"amount": 100, "unit_price": 38}},
+            "downtime_hours": 1.0,
+            "downtime_reasons": [{"reason": "Test2", "hours": 1.0}],
+            "stock_data": {"Flour": 550}
+        }
+        
+        try:
+            # Create first log
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data1, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                create_data1["date"] = (date1 - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data1, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            log1 = response.json()
+            
+            # Create second log
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data2, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                create_data2["date"] = (date2 - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data2, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            log2 = response.json()
+            
+            # Try to change log2's date to log1's date (should conflict)
+            update_data = {"date": log1["date"]}
+            
+            response = requests.put(f"{self.base_url}/daily-logs/{log2['id']}", json=update_data, headers=headers)
+            self.assertEqual(response.status_code, 400)
+            self.assertIn("Daily log for this date already exists", response.text)
+            
+            print("✅ Date conflict correctly detected and prevented with 400")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Date conflict test failed: {str(e)}")
+
 if __name__ == "__main__":
     # Run the tests in order
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
