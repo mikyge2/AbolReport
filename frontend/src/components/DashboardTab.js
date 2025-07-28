@@ -124,7 +124,7 @@ const DashboardTab = () => {
     const fetchComparisonData = async () => {
         try {
             console.log('Fetching comparison data...');
-            const res = await authAxios.get('/analytics/factory-comparison?days=30');
+            const res = await authAxios.get('/analytics/factory-comparison');
             console.log('Comparison data response:', res.data);
             setComparisonData(res.data);
         } catch (err) {
