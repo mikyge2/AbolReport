@@ -51,13 +51,19 @@ const ReportsTab = () => {
 
     const exportFilteredData = async () => {
         try {
+            const token = localStorage.getItem('token');
             const params = new URLSearchParams();
             if (filter.factory) params.append('factory_id', filter.factory);
             if (filter.startDate) params.append('start_date', new Date(filter.startDate).toISOString());
             if (filter.endDate) params.append('end_date', new Date(filter.endDate).toISOString());
 
             toast.loading('Generating filtered Excel report...');
-            const res = await axios.get(`${API}/export-excel?${params.toString()}`, { responseType: 'blob' });
+            const res = await axios.get(`${API}/export-excel?${params.toString()}`, { 
+                responseType: 'blob',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
             const blob = new Blob([res.data], {
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             });
@@ -71,6 +77,7 @@ const ReportsTab = () => {
             window.URL.revokeObjectURL(url);
             toast.success('Filtered Excel report downloaded!');
         } catch (err) {
+            console.error('Error exporting filtered report:', err);
             toast.error('Failed to export filtered report');
         }
     };
