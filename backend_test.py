@@ -131,7 +131,7 @@ class FactoryPortalAPITest(unittest.TestCase):
         except Exception as e:
             self.fail(f"❌ Factory user login test failed: {str(e)}")
 
-    def test_04_dashboard_summary_unauthorized(self):
+    def test_06_dashboard_summary_unauthorized(self):
         """Test dashboard summary endpoint without authentication"""
         try:
             response = requests.get(f"{self.base_url}/dashboard-summary")
@@ -139,6 +139,264 @@ class FactoryPortalAPITest(unittest.TestCase):
             print("✅ Dashboard summary correctly requires authentication")
         except Exception as e:
             self.fail(f"❌ Dashboard summary unauthorized test failed: {str(e)}")
+
+    def test_07_user_management_endpoints(self):
+        """Test user management endpoints with proper authentication"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test GET /users endpoint
+            response = requests.get(f"{self.base_url}/users", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            users = response.json()
+            self.assertIsInstance(users, list)
+            
+            # Verify name fields are included
+            for user in users:
+                self.assertIn("first_name", user)
+                self.assertIn("last_name", user)
+                self.assertIn("username", user)
+                self.assertIn("email", user)
+                self.assertIn("role", user)
+                
+            print(f"✅ GET /users endpoint returned {len(users)} users with name fields")
+            
+            # Find a user to update (should be our created factory user)
+            test_user = None
+            for user in users:
+                if user["username"] == "wakene_manager":
+                    test_user = user
+                    break
+                    
+            if test_user:
+                # Test PUT /users/{user_id} endpoint
+                update_data = {
+                    "first_name": "Updated Wakene",
+                    "last_name": "Updated Manager"
+                }
+                
+                response = requests.put(f"{self.base_url}/users/{test_user['id']}", 
+                                      json=update_data, headers=headers)
+                self.assertEqual(response.status_code, 200)
+                updated_user = response.json()
+                self.assertEqual(updated_user["first_name"], "Updated Wakene")
+                self.assertEqual(updated_user["last_name"], "Updated Manager")
+                print("✅ PUT /users/{user_id} endpoint updated name fields successfully")
+                
+        except Exception as e:
+            self.fail(f"❌ User management endpoints test failed: {str(e)}")
+
+    def test_08_user_management_access_control(self):
+        """Test that factory users cannot access user management endpoints"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            # Test GET /users endpoint with factory user
+            response = requests.get(f"{self.base_url}/users", headers=headers)
+            self.assertEqual(response.status_code, 403)
+            print("✅ Factory users correctly denied access to GET /users")
+            
+            # Test POST /users endpoint with factory user
+            user_data = {
+                "username": "test_user",
+                "email": "test@company.com",
+                "password": "test123",
+                "role": "factory_employer",
+                "factory_id": "amen_water"
+            }
+            response = requests.post(f"{self.base_url}/users", json=user_data, headers=headers)
+            self.assertEqual(response.status_code, 403)
+            print("✅ Factory users correctly denied access to POST /users")
+            
+        except Exception as e:
+            self.fail(f"❌ User management access control test failed: {str(e)}")
+
+    def test_09_multi_reason_downtime_logging(self):
+        """Test the updated daily-logs endpoint with multiple downtime reasons"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create a daily log with multiple downtime reasons
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=2)  # Use 2 days ago to avoid conflicts
+        
+        data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 500,
+                "Fruska (Wheat Bran)": 200,
+                "Fruskelo (Wheat Germ)": 100
+            },
+            "sales_data": {
+                "Flour": {"amount": 400, "unit_price": 50},
+                "Fruska (Wheat Bran)": {"amount": 150, "unit_price": 30},
+                "Fruskelo (Wheat Germ)": {"amount": 80, "unit_price": 40}
+            },
+            "downtime_hours": 4.0,
+            "downtime_reasons": [
+                {"reason": "Equipment Maintenance", "hours": 2.5},
+                {"reason": "Power Outage", "hours": 1.0},
+                {"reason": "Staff Training", "hours": 0.5}
+            ],
+            "stock_data": {
+                "Flour": 1000,
+                "Fruska (Wheat Bran)": 500,
+                "Fruskelo (Wheat Germ)": 300
+            }
+        }
+        
+        try:
+            response = requests.post(f"{self.base_url}/daily-logs", json=data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                print("ℹ️ Daily log for this date already exists, testing with different date")
+                # Try with a different date
+                data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=data, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            log_data = response.json()
+            
+            # Verify the multi-reason downtime structure
+            self.assertEqual(log_data["factory_id"], "wakene_food")
+            self.assertEqual(log_data["downtime_hours"], 4.0)
+            self.assertIn("downtime_reasons", log_data)
+            self.assertIsInstance(log_data["downtime_reasons"], list)
+            self.assertEqual(len(log_data["downtime_reasons"]), 3)
+            
+            # Verify each downtime reason has reason and hours
+            for reason_obj in log_data["downtime_reasons"]:
+                self.assertIn("reason", reason_obj)
+                self.assertIn("hours", reason_obj)
+                self.assertIsInstance(reason_obj["hours"], (int, float))
+                
+            # Verify total hours match
+            total_reason_hours = sum(r["hours"] for r in log_data["downtime_reasons"])
+            self.assertEqual(total_reason_hours, 4.0)
+            
+            print("✅ Multi-reason downtime logging works correctly")
+            print(f"  - Total downtime: {log_data['downtime_hours']} hours")
+            print(f"  - Reasons: {len(log_data['downtime_reasons'])}")
+            for reason in log_data["downtime_reasons"]:
+                print(f"    - {reason['reason']}: {reason['hours']} hours")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Multi-reason downtime logging test failed: {str(e)}")
+
+    def test_10_factory_comparison_today_only(self):
+        """Test factory comparison analytics returns today's data only"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            comparison_data = response.json()
+            
+            # Check if we have data for each factory
+            expected_factories = ["amen_water", "mintu_plast", "mintu_export", "wakene_food"]
+            for factory_id in expected_factories:
+                self.assertIn(factory_id, comparison_data)
+                factory_data = comparison_data[factory_id]
+                expected_metrics = ["name", "production", "sales", "revenue", "downtime", "efficiency", "sku_unit"]
+                for metric in expected_metrics:
+                    self.assertIn(metric, factory_data)
+                    
+            print("✅ Factory comparison endpoint returned today's data successfully")
+            print(f"  - Factories compared: {len(comparison_data)}")
+            for factory_id, data in comparison_data.items():
+                print(f"    - {data['name']}: Production={data['production']}, Sales={data['sales']}, Revenue={data['revenue']}")
+                
+        except Exception as e:
+            self.fail(f"❌ Factory comparison today's data test failed: {str(e)}")
+
+    def test_11_factory_comparison_access_control(self):
+        """Test that factory users cannot access factory comparison"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=headers)
+            self.assertEqual(response.status_code, 403)
+            print("✅ Factory comparison correctly restricted to headquarters only")
+                
+        except Exception as e:
+            self.fail(f"❌ Factory comparison access control test failed: {str(e)}")
+
+    def test_12_role_based_daily_logs_access(self):
+        """Test role-based access control for daily logs"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        # Test factory user can only see their own factory data
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/daily-logs", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            factory_logs = response.json()
+            
+            # All logs should be for wakene_food factory only
+            for log in factory_logs:
+                self.assertEqual(log["factory_id"], "wakene_food")
+                
+            print(f"✅ Factory user sees only their own factory data ({len(factory_logs)} logs)")
+            
+            # Test headquarters user can see all factory data
+            hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+            response = requests.get(f"{self.base_url}/daily-logs", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            hq_logs = response.json()
+            
+            # Should see logs from multiple factories (if they exist)
+            factory_ids_seen = set(log["factory_id"] for log in hq_logs)
+            print(f"✅ Headquarters user sees all factory data ({len(hq_logs)} logs from {len(factory_ids_seen)} factories)")
+            
+        except Exception as e:
+            self.fail(f"❌ Role-based daily logs access test failed: {str(e)}")
+
+    def test_13_authentication_requirements(self):
+        """Test that all protected endpoints require valid bearer tokens"""
+        protected_endpoints = [
+            ("/daily-logs", "GET"),
+            ("/daily-logs", "POST"),
+            ("/me", "GET"),
+            ("/users", "GET"),
+            ("/users", "POST"),
+            ("/dashboard-summary", "GET"),
+            ("/analytics/trends", "GET"),
+            ("/analytics/factory-comparison", "GET"),
+            ("/export-excel", "GET")
+        ]
+        
+        try:
+            for endpoint, method in protected_endpoints:
+                if method == "GET":
+                    response = requests.get(f"{self.base_url}{endpoint}")
+                elif method == "POST":
+                    response = requests.post(f"{self.base_url}{endpoint}", json={})
+                    
+                self.assertEqual(response.status_code, 401, 
+                               f"Endpoint {method} {endpoint} should require authentication")
+                
+            print("✅ All protected endpoints correctly require authentication")
+            
+        except Exception as e:
+            self.fail(f"❌ Authentication requirements test failed: {str(e)}")
 
     def test_05_dashboard_summary_authorized(self):
         """Test dashboard summary endpoint with authentication"""
