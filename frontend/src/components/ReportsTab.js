@@ -33,9 +33,16 @@ const ReportsTab = () => {
 
     const fetchReportData = async () => {
         try {
-            const res = await axios.get(`${API}/daily-logs`);
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API}/daily-logs`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
             setReportData(res.data);
         } catch (err) {
+            console.error('Error fetching report data:', err);
             toast.error('Failed to load report data');
         } finally {
             setLoading(false);
