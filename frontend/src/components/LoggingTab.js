@@ -24,8 +24,18 @@ const LoggingTab = () => {
     const [currentHours, setCurrentHours] = useState('');
     const [totalAllocatedHours, setTotalAllocatedHours] = useState(0);
 
+    // New states for existing logs and editing
+    const [existingLogs, setExistingLogs] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [editingLog, setEditingLog] = useState(null);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deletingLog, setDeletingLog] = useState(null);
+    const [activeTab, setActiveTab] = useState('create'); // 'create' or 'manage'
+
     useEffect(() => {
         fetchFactories();
+        fetchExistingLogs();
     }, []);
 
     // Calculate total allocated hours whenever downtime_reasons changes
@@ -40,6 +50,23 @@ const LoggingTab = () => {
             setFactories(res.data);
         } catch (err) {
             toast.error('Failed to load factories');
+        }
+    };
+
+    const fetchExistingLogs = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API}/daily-logs`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            setExistingLogs(res.data);
+        } catch (err) {
+            toast.error('Failed to load existing logs');
+        } finally {
+            setLoading(false);
         }
     };
 
