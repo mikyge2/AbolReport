@@ -105,6 +105,18 @@
 user_problem_statement: "Continue task request: Dashboard – Mintu Plast: For Mintu Plast, please prepare two separate graphs: One for Preform, One for Cap. Manage Existing Logs: On the "Manage Existing Logs" section, only show logs created by the logged-in user (i.e., logs they are allowed to edit or delete). Excel Export Fix: The Excel export function is not currently working. Please fix it. Also, ensure that: Factory users can only export data related to their own factory, Headquarter users can export data from all factories"
 
 backend:
+  - task: "Update daily-logs endpoint to support filtering by created_by_me parameter"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added created_by_me query parameter to GET /api/daily-logs endpoint to filter logs to only those created by the current user. This enables 'Manage Existing Logs' to show only user's own logs."
+
   - task: "Update DailyLog model to support multiple downtime reasons"
     implemented: true
     working: true
