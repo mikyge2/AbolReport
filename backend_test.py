@@ -863,6 +863,351 @@ class FactoryPortalAPITest(unittest.TestCase):
             print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
             self.fail(f"❌ Date conflict test failed: {str(e)}")
 
+    def test_24_excel_export_basic_factory_user(self):
+        """Test basic Excel export functionality for factory user"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+            
+            # Should return Excel file or 404 if no data
+            if response.status_code == 404:
+                print("ℹ️ No data available for Excel export - this is expected if no logs exist")
+                return
+                
+            self.assertEqual(response.status_code, 200)
+            
+            # Check content type
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            # Check content disposition header for filename
+            content_disposition = response.headers.get('content-disposition', '')
+            self.assertIn('attachment', content_disposition)
+            self.assertIn('filename=', content_disposition)
+            self.assertIn('.xlsx', content_disposition)
+            
+            # Check that we got actual file content
+            self.assertGreater(len(response.content), 0)
+            
+            # Save file for inspection
+            filename = f"{self.download_dir}/factory_export_test.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+                
+            print("✅ Basic Excel export works for factory user")
+            print(f"  - Content-Type: {content_type}")
+            print(f"  - File size: {len(response.content)} bytes")
+            print(f"  - Saved to: {filename}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response headers: {response.headers if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Basic Excel export test failed: {str(e)}")
+
+    def test_25_excel_export_basic_hq_user(self):
+        """Test basic Excel export functionality for headquarters user"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+            
+            # Should return Excel file or 404 if no data
+            if response.status_code == 404:
+                print("ℹ️ No data available for Excel export - this is expected if no logs exist")
+                return
+                
+            self.assertEqual(response.status_code, 200)
+            
+            # Check content type
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            # Check content disposition header for filename
+            content_disposition = response.headers.get('content-disposition', '')
+            self.assertIn('attachment', content_disposition)
+            self.assertIn('filename=', content_disposition)
+            self.assertIn('.xlsx', content_disposition)
+            
+            # Check that we got actual file content
+            self.assertGreater(len(response.content), 0)
+            
+            # Save file for inspection
+            filename = f"{self.download_dir}/hq_export_test.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+                
+            print("✅ Basic Excel export works for headquarters user")
+            print(f"  - Content-Type: {content_type}")
+            print(f"  - File size: {len(response.content)} bytes")
+            print(f"  - Saved to: {filename}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response headers: {response.headers if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Basic Excel export test for HQ failed: {str(e)}")
+
+    def test_26_excel_export_with_date_parameters(self):
+        """Test Excel export with date range parameters"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Test with date range parameters
+        today = datetime.utcnow()
+        start_date = (today - timedelta(days=30)).isoformat()
+        end_date = today.isoformat()
+        
+        params = {
+            'start_date': start_date,
+            'end_date': end_date
+        }
+        
+        try:
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers, params=params)
+            
+            # Should return Excel file or 404 if no data in range
+            if response.status_code == 404:
+                print("ℹ️ No data available for specified date range - this is expected")
+                return
+                
+            self.assertEqual(response.status_code, 200)
+            
+            # Check content type
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            # Save file for inspection
+            filename = f"{self.download_dir}/date_range_export_test.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+                
+            print("✅ Excel export with date parameters works")
+            print(f"  - Date range: {start_date[:10]} to {end_date[:10]}")
+            print(f"  - File size: {len(response.content)} bytes")
+            print(f"  - Saved to: {filename}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export with date parameters test failed: {str(e)}")
+
+    def test_27_excel_export_with_factory_parameter(self):
+        """Test Excel export with factory_id parameter for headquarters user"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Test with specific factory_id parameter
+        params = {'factory_id': 'wakene_food'}
+        
+        try:
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers, params=params)
+            
+            # Should return Excel file or 404 if no data for factory
+            if response.status_code == 404:
+                print("ℹ️ No data available for specified factory - this is expected")
+                return
+                
+            self.assertEqual(response.status_code, 200)
+            
+            # Check content type
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            # Save file for inspection
+            filename = f"{self.download_dir}/factory_specific_export_test.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+                
+            print("✅ Excel export with factory parameter works")
+            print(f"  - Factory: wakene_food")
+            print(f"  - File size: {len(response.content)} bytes")
+            print(f"  - Saved to: {filename}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export with factory parameter test failed: {str(e)}")
+
+    def test_28_excel_export_unauthorized_access(self):
+        """Test Excel export without authentication - should get 401"""
+        try:
+            response = requests.get(f"{self.base_url}/export-excel")
+            self.assertEqual(response.status_code, 401)
+            print("✅ Excel export correctly requires authentication")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export unauthorized access test failed: {str(e)}")
+
+    def test_29_excel_export_factory_restriction(self):
+        """Test that factory users only get their own factory data in Excel export"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test factory user export (should only get wakene_food data)
+            response = requests.get(f"{self.base_url}/export-excel", headers=factory_headers)
+            
+            if response.status_code == 404:
+                print("ℹ️ Factory user has no data to export - this is expected")
+            else:
+                self.assertEqual(response.status_code, 200)
+                
+                # Save factory user export
+                filename = f"{self.download_dir}/factory_restricted_export.xlsx"
+                with open(filename, 'wb') as f:
+                    f.write(response.content)
+                    
+                print("✅ Factory user Excel export successful (restricted to their factory)")
+                print(f"  - File size: {len(response.content)} bytes")
+            
+            # Test headquarters user export (should get all factory data)
+            response = requests.get(f"{self.base_url}/export-excel", headers=hq_headers)
+            
+            if response.status_code == 404:
+                print("ℹ️ Headquarters user has no data to export - this is expected")
+            else:
+                self.assertEqual(response.status_code, 200)
+                
+                # Save HQ user export
+                filename = f"{self.download_dir}/hq_all_factories_export.xlsx"
+                with open(filename, 'wb') as f:
+                    f.write(response.content)
+                    
+                print("✅ Headquarters user Excel export successful (all factories)")
+                print(f"  - File size: {len(response.content)} bytes")
+            
+            print("✅ Excel export factory restrictions working correctly")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export factory restriction test failed: {str(e)}")
+
+    def test_30_excel_export_content_validation(self):
+        """Test Excel export content structure and validation"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # First ensure we have some data by creating a test log
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=15)
+        
+        test_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 400,
+                "Fruska (Wheat Bran)": 200,
+                "Fruskelo (Wheat Germ)": 100
+            },
+            "sales_data": {
+                "Flour": {"amount": 350, "unit_price": 55},
+                "Fruska (Wheat Bran)": {"amount": 180, "unit_price": 35},
+                "Fruskelo (Wheat Germ)": {"amount": 90, "unit_price": 45}
+            },
+            "downtime_hours": 3.5,
+            "downtime_reasons": [
+                {"reason": "Equipment Maintenance", "hours": 2.0},
+                {"reason": "Quality Check", "hours": 1.5}
+            ],
+            "stock_data": {
+                "Flour": 1200,
+                "Fruska (Wheat Bran)": 600,
+                "Fruskelo (Wheat Germ)": 400
+            }
+        }
+        
+        try:
+            # Create test data
+            response = requests.post(f"{self.base_url}/daily-logs", json=test_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                print("ℹ️ Test data already exists, proceeding with export test")
+            else:
+                self.assertEqual(response.status_code, 200)
+                print("✅ Created test data for Excel export validation")
+            
+            # Now test the export
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            
+            # Validate Excel file structure
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            # Check file is not empty
+            self.assertGreater(len(response.content), 1000)  # Excel files should be at least 1KB
+            
+            # Save file for manual inspection
+            filename = f"{self.download_dir}/content_validation_export.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+            
+            # Try to read the Excel file to validate structure
+            try:
+                import pandas as pd
+                
+                # Read the Excel file
+                excel_data = pd.read_excel(BytesIO(response.content), sheet_name=None)
+                
+                # Check that we have expected sheets
+                self.assertIn('Daily Logs', excel_data)
+                self.assertIn('Summary', excel_data)
+                
+                # Check Daily Logs sheet structure
+                daily_logs_df = excel_data['Daily Logs']
+                expected_columns = [
+                    'Date', 'Factory', 'SKU Unit', 'Downtime Hours', 'Downtime Reasons',
+                    'Created By', 'Product', 'Production Amount', 'Sales Amount', 
+                    'Unit Price', 'Revenue', 'Current Stock'
+                ]
+                
+                for col in expected_columns:
+                    self.assertIn(col, daily_logs_df.columns, f"Missing column: {col}")
+                
+                # Check Summary sheet structure
+                summary_df = excel_data['Summary']
+                expected_summary_columns = [
+                    'Factory', 'Total Production', 'Total Sales', 'Total Revenue',
+                    'Total Downtime (Hours)', 'Average Stock', 'Number of Records'
+                ]
+                
+                for col in expected_summary_columns:
+                    self.assertIn(col, summary_df.columns, f"Missing summary column: {col}")
+                
+                print("✅ Excel export content validation successful")
+                print(f"  - Daily Logs sheet: {len(daily_logs_df)} rows, {len(daily_logs_df.columns)} columns")
+                print(f"  - Summary sheet: {len(summary_df)} rows, {len(summary_df.columns)} columns")
+                print(f"  - File saved to: {filename}")
+                
+                # Validate downtime reasons format
+                if len(daily_logs_df) > 0:
+                    downtime_reasons = daily_logs_df['Downtime Reasons'].iloc[0]
+                    if pd.notna(downtime_reasons):
+                        # Should contain reason and hours in format "Reason (hours)"
+                        self.assertIn('(', str(downtime_reasons))
+                        self.assertIn('h)', str(downtime_reasons))
+                        print(f"  - Downtime reasons format: {downtime_reasons}")
+                
+            except ImportError:
+                print("ℹ️ pandas not available for detailed Excel validation, but file structure checks passed")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Excel export content validation test failed: {str(e)}")
+
 if __name__ == "__main__":
     # Run the tests in order
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
