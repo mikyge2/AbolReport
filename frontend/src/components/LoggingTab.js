@@ -226,15 +226,8 @@ const LoggingTab = () => {
                 },
             });
             toast.success('Daily log submitted successfully!', { id: toastId });
-            setFormData({
-                date: new Date().toISOString().split('T')[0],
-                production_data: {},
-                sales_data: {},
-                downtime_hours: 0,
-                downtime_reasons: [],
-                stock_data: {},
-            });
-            setSelectedFactory('');
+            resetForm();
+            fetchExistingLogs(); // Refresh the logs list
         } catch (err) {
             console.error('Error submitting daily log:', err);
             toast.error(err.response?.data?.detail || 'Failed to submit daily log', { id: toastId });
