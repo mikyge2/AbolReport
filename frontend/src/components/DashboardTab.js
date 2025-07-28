@@ -564,75 +564,148 @@ const DashboardTab = () => {
                         {user?.role === 'headquarters' ? 'All Factories' : 'Your Factory'} - Production vs Sales Daily Trends (Last 30 Days)
                     </h2>
                     
-                    {true ? (
+                    {Object.keys(factoriesToDisplay).length > 0 ? (
                         <div className="grid grid-cols-1 gap-8">
-                            {Object.entries(factoriesToDisplay).map(([factoryId, factoryData]) => {
-                                console.log(`Rendering factory ${factoryId}:`, factoryData);
-                                return (
-                                    <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-lg font-semibold text-gray-800">
-                                                {factoryData.name || `Factory ${factoryId}`}
-                                            </h3>
-                                            <div className="flex items-center space-x-4 text-sm text-gray-600">
-                                                <div className="flex items-center">
-                                                    <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
-                                                    <span>Production</span>
+                            {/* Show graphs for specific factories based on role */}
+                            {user?.role === 'headquarters' ? (
+                                // For headquarters - show all 4 factories
+                                Object.entries(factoriesToDisplay).map(([factoryId, factoryData]) => {
+                                    console.log(`Rendering factory ${factoryId}:`, factoryData);
+                                    return (
+                                        <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-lg font-semibold text-gray-800">
+                                                    {factoryData.name || `Factory ${factoryId}`}
+                                                </h3>
+                                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                    <div className="flex items-center">
+                                                        <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
+                                                        <span>Production</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                        <span>Sales</span>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center">
-                                                    <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
-                                                    <span>Sales</span>
+                                            </div>
+                                            <div className="h-96 w-full">
+                                                <Line
+                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
+                                                    options={dailyTrendChartOptions}
+                                                />
+                                            </div>
+                                            
+                                            {/* Factory Summary Stats */}
+                                            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Total Production</p>
+                                                    <p className="text-lg font-semibold text-blue-900">
+                                                        {factoryData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
+                                                    </p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Total Sales</p>
+                                                    <p className="text-lg font-semibold text-yellow-600">
+                                                        {factoryData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
+                                                    </p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Avg Daily Production</p>
+                                                    <p className="text-lg font-semibold text-blue-700">
+                                                        {factoryData?.production?.length > 0 
+                                                            ? Math.round(factoryData.production.reduce((a, b) => a + b, 0) / factoryData.production.length).toLocaleString()
+                                                            : 0}
+                                                    </p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Avg Daily Sales</p>
+                                                    <p className="text-lg font-semibold text-yellow-700">
+                                                        {factoryData?.sales?.length > 0 
+                                                            ? Math.round(factoryData.sales.reduce((a, b) => a + b, 0) / factoryData.sales.length).toLocaleString()
+                                                            : 0}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="h-96 w-full">
-                                            <Line
-                                                data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
-                                                options={dailyTrendChartOptions}
-                                            />
-                                        </div>
-                                        
-                                        {/* Factory Summary Stats */}
-                                        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-500">Total Production</p>
-                                                <p className="text-lg font-semibold text-blue-900">
-                                                    {factoryData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
-                                                </p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-500">Total Sales</p>
-                                                <p className="text-lg font-semibold text-yellow-600">
-                                                    {factoryData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
-                                                </p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                <p className="text-lg font-semibold text-blue-700">
-                                                    {factoryData?.production?.length > 0 
-                                                        ? Math.round(factoryData.production.reduce((a, b) => a + b, 0) / factoryData.production.length).toLocaleString()
-                                                        : 0}
-                                                </p>
-                                            </div>
-                                            <div className="text-center">
-                                                <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                <p className="text-lg font-semibold text-yellow-700">
-                                                    {factoryData?.sales?.length > 0 
-                                                        ? Math.round(factoryData.sales.reduce((a, b) => a + b, 0) / factoryData.sales.length).toLocaleString()
-                                                        : 0}
-                                                </p>
+                                            
+                                            {/* Debug info (can be removed in production) */}
+                                            <div className="mt-4 text-xs text-gray-500">
+                                                <p>Data points: {factoryData?.dates?.length || 0} days</p>
+                                                <p>Production data: {factoryData?.production?.length || 0} points</p>
+                                                <p>Sales data: {factoryData?.sales?.length || 0} points</p>
                                             </div>
                                         </div>
-                                        
-                                        {/* Debug info (can be removed in production) */}
-                                        <div className="mt-4 text-xs text-gray-500">
-                                            <p>Data points: {factoryData?.dates?.length || 0} days</p>
-                                            <p>Production data: {factoryData?.production?.length || 0} points</p>
-                                            <p>Sales data: {factoryData?.sales?.length || 0} points</p>
+                                    );
+                                })
+                            ) : (
+                                // For factory users - show only their factory
+                                Object.entries(factoriesToDisplay).map(([factoryId, factoryData]) => {
+                                    console.log(`Rendering factory ${factoryId}:`, factoryData);
+                                    return (
+                                        <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-lg font-semibold text-gray-800">
+                                                    {factoryData.name || `Factory ${factoryId}`}
+                                                </h3>
+                                                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                    <div className="flex items-center">
+                                                        <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
+                                                        <span>Production</span>
+                                                    </div>
+                                                    <div className="flex items-center">
+                                                        <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                        <span>Sales</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="h-96 w-full">
+                                                <Line
+                                                    data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
+                                                    options={dailyTrendChartOptions}
+                                                />
+                                            </div>
+                                            
+                                            {/* Factory Summary Stats */}
+                                            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Total Production</p>
+                                                    <p className="text-lg font-semibold text-blue-900">
+                                                        {factoryData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
+                                                    </p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Total Sales</p>
+                                                    <p className="text-lg font-semibold text-yellow-600">
+                                                        {factoryData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
+                                                    </p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Avg Daily Production</p>
+                                                    <p className="text-lg font-semibold text-blue-700">
+                                                        {factoryData?.production?.length > 0 
+                                                            ? Math.round(factoryData.production.reduce((a, b) => a + b, 0) / factoryData.production.length).toLocaleString()
+                                                            : 0}
+                                                    </p>
+                                                </div>
+                                                <div className="text-center">
+                                                    <p className="text-sm text-gray-500">Avg Daily Sales</p>
+                                                    <p className="text-lg font-semibold text-yellow-700">
+                                                        {factoryData?.sales?.length > 0 
+                                                            ? Math.round(factoryData.sales.reduce((a, b) => a + b, 0) / factoryData.sales.length).toLocaleString()
+                                                            : 0}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Debug info (can be removed in production) */}
+                                            <div className="mt-4 text-xs text-gray-500">
+                                                <p>Data points: {factoryData?.dates?.length || 0} days</p>
+                                                <p>Production data: {factoryData?.production?.length || 0} points</p>
+                                                <p>Sales data: {factoryData?.sales?.length || 0} points</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                })
+                            )}
                         </div>
                     ) : (
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
