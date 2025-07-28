@@ -55,8 +55,13 @@ const UserManagementTab = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.username || !form.password || !form.factoryId) {
+        if (!form.username || !form.factoryId) {
             toast.error('Please fill in all required fields');
+            return;
+        }
+
+        if (!editingUserId && !form.password) {
+            toast.error('Password is required for new users');
             return;
         }
 
@@ -64,16 +69,27 @@ const UserManagementTab = () => {
             first_name: form.firstName,
             last_name: form.lastName,
             username: form.username,
-            password: form.password,
+            email: form.username + '@company.com', // Generate email from username
+            role: 'factory_employer',
             factory_id: form.factoryId,
         };
 
+        if (form.password) {
+            payload.password = form.password;
+        }
+
         try {
+            const token = localStorage.getItem('token');
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            };
+
             if (editingUserId) {
-                await axios.put(`${API}/users/${editingUserId}`, payload);
+                await axios.put(`${API}/users/${editingUserId}`, payload, { headers });
                 toast.success('User updated');
             } else {
-                await axios.post(`${API}/users`, payload);
+                await axios.post(`${API}/users`, payload, { headers });
                 toast.success('User created');
             }
             setForm({
@@ -86,7 +102,8 @@ const UserManagementTab = () => {
             setEditingUserId(null);
             fetchUsers();
         } catch (err) {
-            toast.error('Failed to save user');
+            console.error('Error saving user:', err);
+            toast.error(err.response?.data?.detail || 'Failed to save user');
         }
     };
 
