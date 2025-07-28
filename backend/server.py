@@ -333,6 +333,63 @@ async def get_daily_logs(
     logs = await db.daily_logs.find(query).to_list(1000)
     return [DailyLog(**log) for log in logs]
 
+@api_router.put("/daily-logs/{log_id}", response_model=DailyLog)
+async def update_daily_log(log_id: str, log_update: DailyLogUpdate, current_user: User = Depends(get_current_user)):
+    # Find the existing log
+    existing_log = await db.daily_logs.find_one({"id": log_id})
+    if not existing_log:
+        raise HTTPException(status_code=404, detail="Daily log not found")
+    
+    # Check if user is the creator of this log
+    if existing_log["created_by"] != current_user.username:
+        raise HTTPException(status_code=403, detail="You can only edit your own daily logs")
+    
+    # Validate factory access (user should not be able to change factory_id to unauthorized factory)
+    if log_update.factory_id is not None:
+        if current_user.role == "factory_employer" and current_user.factory_id != log_update.factory_id:
+            raise HTTPException(status_code=403, detail="Access denied to this factory")
+    
+    # If user is editing date, check for conflicts
+    if log_update.date is not None and log_update.date != existing_log["date"]:
+        existing_factory_id = log_update.factory_id if log_update.factory_id is not None else existing_log["factory_id"]
+        conflicting_log = await db.daily_logs.find_one({
+            "factory_id": existing_factory_id,
+            "date": log_update.date,
+            "id": {"$ne": log_id}  # Exclude current log
+        })
+        if conflicting_log:
+            raise HTTPException(status_code=400, detail="Daily log for this date already exists")
+    
+    # Prepare update data - only update fields that are provided
+    update_data = {}
+    for field, value in log_update.dict(exclude_unset=True).items():
+        update_data[field] = value
+    
+    # Update the log
+    await db.daily_logs.update_one({"id": log_id}, {"$set": update_data})
+    
+    # Return updated log
+    updated_log = await db.daily_logs.find_one({"id": log_id})
+    return DailyLog(**updated_log)
+
+@api_router.delete("/daily-logs/{log_id}")
+async def delete_daily_log(log_id: str, current_user: User = Depends(get_current_user)):
+    # Find the existing log
+    existing_log = await db.daily_logs.find_one({"id": log_id})
+    if not existing_log:
+        raise HTTPException(status_code=404, detail="Daily log not found")
+    
+    # Check if user is the creator of this log
+    if existing_log["created_by"] != current_user.username:
+        raise HTTPException(status_code=403, detail="You can only delete your own daily logs")
+    
+    # Delete the log
+    result = await db.daily_logs.delete_one({"id": log_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=500, detail="Failed to delete daily log")
+    
+    return {"message": "Daily log deleted successfully"}
+
 @api_router.get("/me", response_model=UserResponse)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return UserResponse(
