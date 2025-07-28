@@ -205,6 +205,39 @@ async def create_user(user: UserCreate, current_user: User = Depends(get_current
     )
     return user_response
 
+@api_router.post("/register", response_model=UserResponse)
+async def register(user: UserCreate):
+    # Check if user exists
+    existing_user = await db.users.find_one({"username": user.username})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already registered")
+    
+    # Validate factory_id for factory employers
+    if user.role == "factory_employer":
+        if not user.factory_id or user.factory_id not in FACTORIES:
+            raise HTTPException(status_code=400, detail="Valid factory_id required for factory employers")
+    
+    # Create user
+    user_dict = user.dict()
+    user_dict["password_hash"] = get_password_hash(user.password)
+    del user_dict["password"]
+    
+    user_obj = User(**user_dict)
+    await db.users.insert_one(user_obj.dict())
+    
+    # Create response without password_hash
+    user_response = UserResponse(
+        id=user_obj.id,
+        username=user_obj.username,
+        email=user_obj.email,
+        role=user_obj.role,
+        factory_id=user_obj.factory_id,
+        first_name=user_obj.first_name,
+        last_name=user_obj.last_name,
+        created_at=user_obj.created_at
+    )
+    return user_response
+
 @api_router.post("/login", response_model=Token)
 async def login(user_credentials: UserLogin):
     user = await db.users.find_one({"username": user_credentials.username})
