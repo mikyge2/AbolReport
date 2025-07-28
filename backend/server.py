@@ -85,6 +85,8 @@ class UserResponse(BaseModel):
     email: str
     role: str
     factory_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     created_at: datetime
 
 class UserCreate(BaseModel):
