@@ -223,6 +223,30 @@ backend:
         comment: "✅ TESTED: Daily log edit/delete functionality working perfectly. All test scenarios passed: 1) Edit Own Daily Log - Successfully updated all fields (production_data, sales_data, downtime_hours, downtime_reasons, stock_data) including adding new products 2) Edit Permission Denied - Correctly returns 403 when user tries to edit another user's log 3) Delete Own Daily Log - Successfully removes log from database with proper confirmation 4) Delete Permission Denied - Correctly returns 403 when user tries to delete another user's log 5) Edge Cases - All working: non-existent log returns 404, unauthorized factory change returns 403, date conflict returns 400. Authorization properly implemented - only log creators can modify their own logs."
 
 frontend:
+  - task: "Update LoggingTab to show only user's own logs in Manage Existing Logs"
+    implemented: true
+    working: true
+    file: "frontend/src/components/LoggingTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Modified fetchExistingLogs() function to add created_by_me=true parameter, so 'Manage Existing Logs' section now only shows logs created by the logged-in user."
+
+  - task: "Update DashboardTab to create separate Preform and Cap charts for Mintu Plast"
+    implemented: true
+    working: true
+    file: "frontend/src/components/DashboardTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added helper functions categorizeMintuPlastProducts() and createMintuPlastSeparateData() to categorize Mintu Plast products into Preform and Cap categories. Modified chart rendering logic to create two separate charts for Mintu Plast (one for Preforms, one for Caps) while maintaining single charts for other factories. Applied to both headquarters and factory user sections."
+
   - task: "Update Daily Logging Tab for multiple downtime reasons"
     implemented: true
     working: true
