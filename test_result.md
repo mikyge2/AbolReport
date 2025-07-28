@@ -116,6 +116,9 @@ backend:
       - working: true
         agent: "main"
         comment: "Added created_by_me query parameter to GET /api/daily-logs endpoint to filter logs to only those created by the current user. This enables 'Manage Existing Logs' to show only user's own logs."
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TESTING COMPLETED: created_by_me parameter functionality working perfectly. 1) Factory User Testing: With created_by_me=true returns only user's own logs (2 logs vs 4 total accessible), without parameter returns all factory-accessible logs (4 logs from wakene_food). 2) HQ User Testing: With created_by_me=true returns only user's own logs (5 logs vs 7 total), without parameter returns all logs from multiple creators and factories (7 logs from 2 creators and 2 factories). 3) Parameter Behavior: created_by_me=false returns same results as no parameter (proper default behavior). 4) Combined Filters: created_by_me works correctly with date range and factory_id parameters. 5) Role-based Security: Factory users still restricted to their assigned factory even with created_by_me parameter. All test scenarios passed - the filtering works correctly for both factory users and headquarters users as required."
 
   - task: "Update DailyLog model to support multiple downtime reasons"
     implemented: true
