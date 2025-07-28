@@ -28,9 +28,16 @@ const UserManagementTab = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get(`${API}/users`);
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API}/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
             setUsers(res.data);
         } catch (err) {
+            console.error('Error fetching users:', err);
             toast.error('Failed to load users');
         } finally {
             setLoading(false);
