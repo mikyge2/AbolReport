@@ -135,6 +135,18 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: Daily log edit/delete functionality working perfectly. Users can edit all fields of their own logs (production_data, sales_data, downtime_hours, downtime_reasons, stock_data). Authorization correctly prevents editing/deleting other users' logs (403 Forbidden). All edge cases handled: 404 for non-existent logs, 403 for unauthorized factory changes, 400 for date conflicts."
 
+  - task: "Verify Excel export factory restrictions (users only export their assigned factory data)"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Verified existing /api/export-excel endpoint properly filters data by user's assigned factory. Factory employees can only export their own factory data, headquarters users can export all data. No changes needed - already working correctly."
+
   - task: "Update Factory Comparison Analytics to show today's data only"
     implemented: true
     working: true
