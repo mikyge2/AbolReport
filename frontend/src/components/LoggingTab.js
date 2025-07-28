@@ -104,6 +104,98 @@ const LoggingTab = () => {
         });
     };
 
+    const handleEditLog = (log) => {
+        setEditingLog(log);
+        setFormData({
+            date: new Date(log.date).toISOString().split('T')[0],
+            production_data: log.production_data,
+            sales_data: log.sales_data,
+            downtime_hours: log.downtime_hours,
+            downtime_reasons: log.downtime_reasons,
+            stock_data: log.stock_data,
+        });
+        setSelectedFactory(log.factory_id);
+        setShowEditModal(true);
+    };
+
+    const handleUpdateLog = async (e) => {
+        e.preventDefault();
+        
+        // Validate downtime reasons if total downtime hours > 0
+        if (formData.downtime_hours > 0) {
+            if (formData.downtime_reasons.length === 0) {
+                toast.error('Please add at least one downtime reason when downtime hours are specified');
+                return;
+            }
+            
+            if (Math.abs(totalAllocatedHours - formData.downtime_hours) > 0.01) {
+                toast.error(`Total allocated hours (${totalAllocatedHours}) must equal total downtime hours (${formData.downtime_hours})`);
+                return;
+            }
+        }
+
+        const toastId = toast.loading('Updating daily log...');
+        try {
+            const token = localStorage.getItem('token');
+            await axios.put(`${API}/daily-logs/${editingLog.id}`, {
+                ...formData,
+                factory_id: selectedFactory,
+                date: new Date(formData.date).toISOString(),
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            toast.success('Daily log updated successfully!', { id: toastId });
+            setShowEditModal(false);
+            setEditingLog(null);
+            resetForm();
+            fetchExistingLogs(); // Refresh the logs list
+        } catch (err) {
+            console.error('Error updating daily log:', err);
+            toast.error(err.response?.data?.detail || 'Failed to update daily log', { id: toastId });
+        }
+    };
+
+    const handleDeleteLog = (log) => {
+        setDeletingLog(log);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDeleteLog = async () => {
+        const toastId = toast.loading('Deleting daily log...');
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API}/daily-logs/${deletingLog.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            toast.success('Daily log deleted successfully!', { id: toastId });
+            setShowDeleteConfirm(false);
+            setDeletingLog(null);
+            fetchExistingLogs(); // Refresh the logs list
+        } catch (err) {
+            console.error('Error deleting daily log:', err);
+            toast.error(err.response?.data?.detail || 'Failed to delete daily log', { id: toastId });
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            date: new Date().toISOString().split('T')[0],
+            production_data: {},
+            sales_data: {},
+            downtime_hours: 0,
+            downtime_reasons: [],
+            stock_data: {},
+        });
+        setSelectedFactory('');
+        setCurrentReason('');
+        setCurrentHours('');
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
