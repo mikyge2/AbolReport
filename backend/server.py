@@ -342,6 +342,8 @@ async def list_users(current_user: User = Depends(get_current_user)):
             email=u["email"],
             role=u["role"],
             factory_id=u.get("factory_id"),
+            first_name=u.get("first_name"),
+            last_name=u.get("last_name"),
             created_at=u["created_at"]
         )
         for u in users
