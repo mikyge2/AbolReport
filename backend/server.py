@@ -611,15 +611,17 @@ async def get_analytics_trends(
 
 @api_router.get("/analytics/factory-comparison")
 async def get_factory_comparison(
-    days: int = 30,
     current_user: User = Depends(get_current_user)
 ):
-    """Get factory comparison data"""
+    """Get factory comparison data - today's data only"""
     if current_user.role == "factory_employer":
         raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
     
-    start_date = datetime.utcnow() - timedelta(days=days)
-    query = {"date": {"$gte": start_date}}
+    # Get today's data only
+    today = datetime.utcnow().date()
+    start_of_day = datetime.combine(today, datetime.min.time())
+    end_of_day = datetime.combine(today, datetime.max.time())
+    query = {"date": {"$gte": start_of_day, "$lte": end_of_day}}
     
     logs = await db.daily_logs.find(query).to_list(1000)
     
