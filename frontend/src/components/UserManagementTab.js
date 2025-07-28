@@ -121,10 +121,17 @@ const UserManagementTab = () => {
     const handleDelete = async (id) => {
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
-            await axios.delete(`${API}/users/${id}`);
+            const token = localStorage.getItem('token');
+            await axios.delete(`${API}/users/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
             toast.success('User deleted');
             fetchUsers();
         } catch (err) {
+            console.error('Error deleting user:', err);
             toast.error('Failed to delete user');
         }
     };
