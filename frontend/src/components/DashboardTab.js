@@ -294,6 +294,68 @@ const DashboardTab = () => {
         }
     };
 
+    // Helper function to categorize Mintu Plast products
+    const categorizeMintuPlastProducts = (products) => {
+        const preformProducts = [];
+        const capProducts = [];
+        
+        products.forEach(product => {
+            if (product.toLowerCase().includes('preform')) {
+                preformProducts.push(product);
+            } else if (product.toLowerCase().includes('cap')) {
+                capProducts.push(product);
+            }
+        });
+        
+        return { preformProducts, capProducts };
+    };
+
+    // Helper function to create separate data for Preform and Cap products
+    const createMintuPlastSeparateData = (factoryData, productType) => {
+        if (!factoryData || !factoryData.production_by_product || !factoryData.sales_by_product) {
+            return {
+                dates: factoryData?.dates || [],
+                production: new Array(factoryData?.dates?.length || 0).fill(0),
+                sales: new Array(factoryData?.dates?.length || 0).fill(0)
+            };
+        }
+
+        const { preformProducts, capProducts } = categorizeMintuPlastProducts(
+            Object.keys(factoryData.production_by_product)
+        );
+        
+        const relevantProducts = productType === 'preform' ? preformProducts : capProducts;
+        
+        const dates = factoryData.dates || [];
+        const productionData = [];
+        const salesData = [];
+        
+        // Aggregate data for the relevant product category
+        dates.forEach((date, index) => {
+            let totalProduction = 0;
+            let totalSales = 0;
+            
+            relevantProducts.forEach(product => {
+                if (factoryData.production_by_product[product] && factoryData.production_by_product[product][index] !== undefined) {
+                    totalProduction += factoryData.production_by_product[product][index];
+                }
+                if (factoryData.sales_by_product[product] && factoryData.sales_by_product[product][index] !== undefined) {
+                    totalSales += factoryData.sales_by_product[product][index];
+                }
+            });
+            
+            productionData.push(totalProduction);
+            salesData.push(totalSales);
+        });
+        
+        return {
+            dates,
+            production: productionData,
+            sales: salesData,
+            name: `Mintu Plast - ${productType.charAt(0).toUpperCase() + productType.slice(1)} Products`
+        };
+    };
+
     // Function to get factories data to display based on user role
     const getFactoriesDataToDisplay = () => {
         if (user?.role === 'headquarters') {
