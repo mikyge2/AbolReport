@@ -165,6 +165,21 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: User management endpoints working correctly. POST /users creates users with proper authentication and name fields. GET /users returns 2 users with all required fields. PUT /users/{user_id} successfully updates name fields (tested updating 'Wakene Manager' to 'Updated Wakene Updated Manager'). All endpoints properly restricted to headquarters users only (403 for factory users)."
 
+  - task: "Daily log edit and delete functionality"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented PUT /api/daily-logs/{log_id} and DELETE /api/daily-logs/{log_id} endpoints with proper authorization. Only the creator of a daily log can edit or delete it. PUT endpoint updates only fields provided in request body. DELETE endpoint removes the daily log completely."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Daily log edit/delete functionality working perfectly. All test scenarios passed: 1) Edit Own Daily Log - Successfully updated all fields (production_data, sales_data, downtime_hours, downtime_reasons, stock_data) including adding new products 2) Edit Permission Denied - Correctly returns 403 when user tries to edit another user's log 3) Delete Own Daily Log - Successfully removes log from database with proper confirmation 4) Delete Permission Denied - Correctly returns 403 when user tries to delete another user's log 5) Edge Cases - All working: non-existent log returns 404, unauthorized factory change returns 403, date conflict returns 400. Authorization properly implemented - only log creators can modify their own logs."
+
 frontend:
   - task: "Update Daily Logging Tab for multiple downtime reasons"
     implemented: true
