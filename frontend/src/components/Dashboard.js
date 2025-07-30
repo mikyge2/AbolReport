@@ -72,19 +72,36 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
+    <div className="min-h-screen futuristic-bg">
+      {/* Floating background elements */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-4 h-4 bg-[#ffc72c] opacity-40 rotate-45 animate-float"></div>
+        <div className="absolute top-1/3 right-1/3 w-6 h-6 border-2 border-[#ffc72c] opacity-30 animate-float-delayed"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-3 h-3 bg-white opacity-20 rounded-full animate-float-slow"></div>
+        <div className="absolute bottom-1/3 right-1/4 w-5 h-5 border-2 border-white opacity-15 rotate-45 animate-float"></div>
+        <div className="absolute top-1/2 left-1/6 w-2 h-2 bg-[#1a355b] opacity-25 animate-float-delayed"></div>
+        <div className="absolute top-3/4 right-1/6 w-3 h-3 border border-[#ffc72c] opacity-20 animate-float-slow"></div>
+      </div>
+
+      <nav className="futuristic-nav sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <h1 className="text-xl font-bold text-primary">Factory Portal</h1>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-[#1a355b] to-[#ffc72c] rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h1 className="text-xl font-bold text-futuristic-primary">Factory Portal</h1>
+            </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">Welcome, {user?.username}</span>
-              <span className="text-xs bg-secondary text-primary px-2 py-1 rounded">
+              <span className="text-sm text-futuristic-secondary">Welcome, {user?.username}</span>
+              <span className="text-xs bg-gradient-to-r from-[#ffc72c] to-[#1a355b] text-white px-3 py-1 rounded-full font-medium">
                 {user?.role === 'headquarters' ? 'HQ' : 'Factory'}
               </span>
               <button
                 onClick={logout}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-futuristic-muted hover:text-[#ffc72c] transition-colors duration-200"
               >
                 Logout
               </button>
@@ -94,22 +111,18 @@ const Dashboard = () => {
       </nav>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
+        <div className="mb-8">
+          <nav className="flex space-x-2 backdrop-blur-lg bg-white/5 rounded-2xl p-2 border border-white/10">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                  activeTab === tab.id
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
                 disabled={isTabLoading}
               >
                 {tab.label}
                 {isTabLoading && activeTab === tab.id && (
-                  <span className="ml-2 inline-block w-3 h-3 border border-primary border-t-transparent rounded-full animate-spin"></span>
+                  <span className="ml-2 inline-block w-3 h-3 border border-[#ffc72c] border-t-transparent rounded-full animate-spin"></span>
                 )}
               </button>
             ))}
@@ -117,7 +130,7 @@ const Dashboard = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="transition-all duration-300 ease-in-out">
+        <div className="transition-all duration-500 ease-in-out">
           {renderActiveTab()}
         </div>
       </div>
