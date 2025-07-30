@@ -621,7 +621,7 @@ const DashboardTab = () => {
             <div className="space-y-6">
                 <div className="chart-container-futuristic">
                     <h2 className="text-xl font-bold text-futuristic-primary mb-6">
-                        {user?.role === 'headquarters' ? 'All Factories' : 'Your Factory'} - Production vs Sales Daily Trends (Last 30 Days)
+                        📊 {user?.role === 'headquarters' ? 'All Factories Overview' : 'Factory Performance'} - Production vs Sales Trends (30-Day Period)
                     </h2>
                     
                     {Object.keys(factoriesToDisplay).length > 0 ? (
