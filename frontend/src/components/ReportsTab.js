@@ -161,13 +161,13 @@ const ReportsTab = () => {
 
                 {/* Summary Cards - Only Total Revenue and Total Downtime */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="bg-yellow-50 rounded p-4">
-                        <h3 className="text-sm font-medium text-yellow-600 mb-1">Total Revenue</h3>
-                        <p className="text-2xl font-bold text-yellow-800">${totals.revenue.toLocaleString()}</p>
+                    <div className="stat-card-futuristic">
+                        <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Revenue</h3>
+                        <p className="text-2xl font-bold text-[#ffc72c]">${totals.revenue.toLocaleString()}</p>
                     </div>
-                    <div className="bg-red-50 rounded p-4">
-                        <h3 className="text-sm font-medium text-red-600 mb-1">Total Downtime</h3>
-                        <p className="text-2xl font-bold text-red-800">{totals.downtime}h</p>
+                    <div className="stat-card-futuristic">
+                        <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Downtime</h3>
+                        <p className="text-2xl font-bold text-red-400">{totals.downtime}h</p>
                     </div>
                 </div>
 
