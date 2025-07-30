@@ -161,7 +161,7 @@ async def populate_today_data():
     
     print(f"🎉 Successfully created {logs_created} daily logs for today across all {len(FACTORIES)} factories")
     
-    await client.close()
+    client.close()
 
 if __name__ == "__main__":
     asyncio.run(populate_today_data())
