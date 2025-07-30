@@ -495,7 +495,7 @@ const DashboardTab = () => {
     // Show error state
     if (error) {
         return (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div className="glass-card p-6 border-red-500/30">
                 <div className="flex items-center">
                     <div className="flex-shrink-0">
                         <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -503,11 +503,11 @@ const DashboardTab = () => {
                         </svg>
                     </div>
                     <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800">Error Loading Dashboard</h3>
-                        <p className="text-sm text-red-700 mt-1">{error}</p>
+                        <h3 className="text-sm font-medium text-red-300">Error Loading Dashboard</h3>
+                        <p className="text-sm text-futuristic-muted mt-1">{error}</p>
                         <button
                             onClick={fetchAllData}
-                            className="mt-2 bg-red-100 hover:bg-red-200 text-red-800 font-medium py-1 px-3 rounded text-sm"
+                            className="mt-2 btn-futuristic py-1 px-3 text-sm"
                         >
                             Retry
                         </button>
