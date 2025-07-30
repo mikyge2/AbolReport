@@ -393,11 +393,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Test multi-reason downtime logging functionality"
-    - "Test role-based dashboard filtering"
-    - "Test user management with authentication"
-    - "Test today's factory comparison data"
-  stuck_tasks: []
+    - "Dashboard graphs and reports comprehensive verification"
+    - "Excel export functionality issue resolution"
+  stuck_tasks:
+    - "Excel Export functionality issue - 500 server error"
   test_all: false
   test_priority: "high_first"
 
