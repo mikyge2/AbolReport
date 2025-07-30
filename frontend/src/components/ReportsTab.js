@@ -214,7 +214,7 @@ const ReportsTab = () => {
                                             <td className="px-6 py-4">{production}</td>
                                             <td className="px-6 py-4">{sales}</td>
                                             <td className="px-6 py-4">${revenue}</td>
-                                            <td className="px-6 py-4">{log.downtime_hours}h</td>
+                                            <td className="px-6 py-4">{log.downtime_hours.toFixed(2)}h</td>
                                             <td className="px-6 py-4">{log.created_by}</td>
                                         </tr>
                                     );
