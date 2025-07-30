@@ -110,9 +110,9 @@ const ReportsTab = () => {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-primary mb-6">Reports & Analytics</h2>
+        <div className="space-y-8">
+            <div className="glass-card-light p-6">
+                <h2 className="text-2xl font-bold text-futuristic-primary mb-6">Reports & Analytics</h2>
 
                 {/* Filters */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
