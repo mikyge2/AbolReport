@@ -167,7 +167,7 @@ const ReportsTab = () => {
                     </div>
                     <div className="stat-card-futuristic">
                         <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Downtime</h3>
-                        <p className="text-2xl font-bold text-red-400">{totals.downtime}h</p>
+                        <p className="text-2xl font-bold text-red-400">{totals.downtime.toFixed(2)}h</p>
                     </div>
                 </div>
 
