@@ -163,7 +163,7 @@ const ReportsTab = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="stat-card-futuristic">
                         <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Revenue</h3>
-                        <p className="text-2xl font-bold text-[#ffc72c]">${totals.revenue.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-[#ffc72c]">${totals.revenue.toFixed(2)}</p>
                     </div>
                     <div className="stat-card-futuristic">
                         <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Downtime</h3>
