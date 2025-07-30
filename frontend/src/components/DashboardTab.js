@@ -700,7 +700,7 @@ const DashboardTab = () => {
                                                 <div className="glass-card-light p-6">
                                                     <div className="flex items-center justify-between mb-4">
                                                         <h3 className="text-lg font-semibold text-gray-800">
-                                                            {capData.name}
+                                                            🧴 Mintu Plast - Cap Products Performance
                                                         </h3>
                                                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                                                             <div className="flex items-center">
