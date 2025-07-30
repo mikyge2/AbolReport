@@ -672,8 +672,15 @@ async def get_analytics_trends(
                 "name": factory_info["name"],
                 "dates": factory_trends["dates"].copy(),
                 "production": [0] * len(factory_trends["dates"]),
-                "sales": [0] * len(factory_trends["dates"])
+                "sales": [0] * len(factory_trends["dates"]),
+                "production_by_product": {},
+                "sales_by_product": {}
             }
+            
+            # Initialize product-level arrays for each factory
+            for product in factory_info["products"]:
+                factory_trends["factories"][factory_id]["production_by_product"][product] = [0] * len(factory_trends["dates"])
+                factory_trends["factories"][factory_id]["sales_by_product"][product] = [0] * len(factory_trends["dates"])
         
         # Initialize overall downtime and stock arrays
         factory_trends["downtime"] = [0] * len(factory_trends["dates"])
