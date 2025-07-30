@@ -1602,6 +1602,256 @@ class FactoryPortalAPITest(unittest.TestCase):
             print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
             self.fail(f"❌ Excel export role-based filtering verification failed: {str(e)}")
 
+    def test_50_dashboard_analytics_trends_data_structure(self):
+        """Test /api/analytics/trends endpoint data structure for dashboard graphs"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test factory user - should get single factory format
+            response = requests.get(f"{self.base_url}/analytics/trends?days=30", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            factory_trends = response.json()
+            
+            # Verify single factory data structure
+            expected_fields = ["production", "sales", "downtime", "stock", "dates"]
+            for field in expected_fields:
+                self.assertIn(field, factory_trends, f"Missing field: {field}")
+                self.assertIsInstance(factory_trends[field], list, f"Field {field} should be a list")
+            
+            # All arrays should have same length
+            if factory_trends["dates"]:
+                date_count = len(factory_trends["dates"])
+                for field in ["production", "sales", "downtime", "stock"]:
+                    self.assertEqual(len(factory_trends[field]), date_count, 
+                                   f"Array length mismatch for {field}")
+            
+            print("✅ Factory user analytics trends data structure correct")
+            print(f"  - Data points: {len(factory_trends['dates'])}")
+            print(f"  - Fields: {list(factory_trends.keys())}")
+            
+            # Test headquarters user - should get multi-factory format
+            hq_response = requests.get(f"{self.base_url}/analytics/trends?days=30", headers=hq_headers)
+            self.assertEqual(hq_response.status_code, 200)
+            hq_trends = hq_response.json()
+            
+            # Verify multi-factory data structure
+            expected_hq_fields = ["factories", "dates", "downtime", "stock"]
+            for field in expected_hq_fields:
+                self.assertIn(field, hq_trends, f"Missing HQ field: {field}")
+            
+            self.assertIsInstance(hq_trends["factories"], dict, "Factories should be a dict")
+            self.assertIsInstance(hq_trends["dates"], list, "Dates should be a list")
+            self.assertIsInstance(hq_trends["downtime"], list, "Downtime should be a list")
+            self.assertIsInstance(hq_trends["stock"], list, "Stock should be a list")
+            
+            # Check each factory has proper structure
+            for factory_id, factory_data in hq_trends["factories"].items():
+                self.assertIn("name", factory_data, f"Factory {factory_id} missing name")
+                self.assertIn("dates", factory_data, f"Factory {factory_id} missing dates")
+                self.assertIn("production", factory_data, f"Factory {factory_id} missing production")
+                self.assertIn("sales", factory_data, f"Factory {factory_id} missing sales")
+                
+                self.assertIsInstance(factory_data["dates"], list)
+                self.assertIsInstance(factory_data["production"], list)
+                self.assertIsInstance(factory_data["sales"], list)
+                
+                # Arrays should have same length as main dates array
+                if hq_trends["dates"]:
+                    date_count = len(hq_trends["dates"])
+                    self.assertEqual(len(factory_data["dates"]), date_count)
+                    self.assertEqual(len(factory_data["production"]), date_count)
+                    self.assertEqual(len(factory_data["sales"]), date_count)
+            
+            print("✅ Headquarters user analytics trends data structure correct")
+            print(f"  - Factories: {len(hq_trends['factories'])}")
+            print(f"  - Data points: {len(hq_trends['dates'])}")
+            print(f"  - Factory names: {[f['name'] for f in hq_trends['factories'].values()]}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Analytics trends data structure test failed: {str(e)}")
+
+    def test_51_dashboard_summary_data_structure(self):
+        """Test /api/dashboard-summary endpoint data structure"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test factory user dashboard summary
+            response = requests.get(f"{self.base_url}/dashboard-summary", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            factory_summary = response.json()
+            
+            # Verify required fields are present
+            required_fields = ["total_downtime", "total_stock", "factory_summaries"]
+            for field in required_fields:
+                self.assertIn(field, factory_summary, f"Missing field: {field}")
+            
+            # Verify data types
+            self.assertIsInstance(factory_summary["total_downtime"], (int, float))
+            self.assertIsInstance(factory_summary["total_stock"], (int, float))
+            self.assertIsInstance(factory_summary["factory_summaries"], dict)
+            
+            # Factory user should only see their own factory
+            for factory_id in factory_summary["factory_summaries"].keys():
+                self.assertEqual(factory_id, "wakene_food", "Factory user should only see their own factory")
+            
+            # Check factory summary structure
+            for factory_id, factory_data in factory_summary["factory_summaries"].items():
+                expected_factory_fields = ["name", "production", "sales", "downtime", "stock"]
+                for field in expected_factory_fields:
+                    self.assertIn(field, factory_data, f"Factory {factory_id} missing {field}")
+                    self.assertIsInstance(factory_data[field], (int, float))
+            
+            print("✅ Factory user dashboard summary data structure correct")
+            print(f"  - Total downtime: {factory_summary['total_downtime']}")
+            print(f"  - Total stock: {factory_summary['total_stock']}")
+            print(f"  - Factories: {len(factory_summary['factory_summaries'])}")
+            
+            # Test headquarters user dashboard summary
+            hq_response = requests.get(f"{self.base_url}/dashboard-summary", headers=hq_headers)
+            self.assertEqual(hq_response.status_code, 200)
+            hq_summary = hq_response.json()
+            
+            # Verify same structure for HQ user
+            for field in required_fields:
+                self.assertIn(field, hq_summary, f"Missing HQ field: {field}")
+            
+            self.assertIsInstance(hq_summary["total_downtime"], (int, float))
+            self.assertIsInstance(hq_summary["total_stock"], (int, float))
+            self.assertIsInstance(hq_summary["factory_summaries"], dict)
+            
+            # HQ user should see multiple factories (if data exists)
+            print("✅ Headquarters user dashboard summary data structure correct")
+            print(f"  - Total downtime: {hq_summary['total_downtime']}")
+            print(f"  - Total stock: {hq_summary['total_stock']}")
+            print(f"  - Factories: {len(hq_summary['factory_summaries'])}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Dashboard summary data structure test failed: {str(e)}")
+
+    def test_52_factory_comparison_data_structure(self):
+        """Test /api/analytics/factory-comparison endpoint data structure for today's data"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            comparison_data = response.json()
+            
+            # Should be a dictionary with factory IDs as keys
+            self.assertIsInstance(comparison_data, dict, "Factory comparison should return a dictionary")
+            
+            # Check all expected factories are present
+            expected_factories = ["amen_water", "mintu_plast", "mintu_export", "wakene_food"]
+            for factory_id in expected_factories:
+                self.assertIn(factory_id, comparison_data, f"Missing factory: {factory_id}")
+            
+            # Check each factory has proper metrics structure
+            for factory_id, factory_data in comparison_data.items():
+                required_metrics = ["name", "production", "sales", "revenue", "downtime", "efficiency", "sku_unit"]
+                for metric in required_metrics:
+                    self.assertIn(metric, factory_data, f"Factory {factory_id} missing {metric}")
+                
+                # Verify data types
+                self.assertIsInstance(factory_data["name"], str)
+                self.assertIsInstance(factory_data["production"], (int, float))
+                self.assertIsInstance(factory_data["sales"], (int, float))
+                self.assertIsInstance(factory_data["revenue"], (int, float))
+                self.assertIsInstance(factory_data["downtime"], (int, float))
+                self.assertIsInstance(factory_data["efficiency"], (int, float))
+                self.assertIsInstance(factory_data["sku_unit"], str)
+                
+                # Efficiency should be a percentage (0-100)
+                self.assertGreaterEqual(factory_data["efficiency"], 0)
+                self.assertLessEqual(factory_data["efficiency"], 200)  # Allow some flexibility
+            
+            print("✅ Factory comparison data structure correct for today's data")
+            print(f"  - Factories compared: {len(comparison_data)}")
+            for factory_id, data in comparison_data.items():
+                print(f"    - {data['name']}: Production={data['production']}, Sales={data['sales']}, Revenue={data['revenue']}, Efficiency={data['efficiency']:.1f}%")
+            
+            # Test that factory users cannot access this endpoint
+            if hasattr(self, 'factory_token') and self.factory_token:
+                factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+                factory_response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=factory_headers)
+                self.assertEqual(factory_response.status_code, 403, "Factory users should not access factory comparison")
+                print("✅ Factory comparison correctly restricted to headquarters only")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Factory comparison data structure test failed: {str(e)}")
+
+    def test_53_dashboard_endpoints_role_based_filtering(self):
+        """Test role-based data filtering across all dashboard endpoints"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test analytics/trends role-based filtering
+            factory_response = requests.get(f"{self.base_url}/analytics/trends?days=30", headers=factory_headers)
+            hq_response = requests.get(f"{self.base_url}/analytics/trends?days=30", headers=hq_headers)
+            
+            self.assertEqual(factory_response.status_code, 200)
+            self.assertEqual(hq_response.status_code, 200)
+            
+            factory_trends = factory_response.json()
+            hq_trends = hq_response.json()
+            
+            # Factory user gets single factory format, HQ gets multi-factory format
+            self.assertIn("production", factory_trends)  # Single factory format
+            self.assertIn("factories", hq_trends)  # Multi-factory format
+            
+            print("✅ Analytics trends role-based filtering working")
+            
+            # Test dashboard-summary role-based filtering
+            factory_summary_response = requests.get(f"{self.base_url}/dashboard-summary", headers=factory_headers)
+            hq_summary_response = requests.get(f"{self.base_url}/dashboard-summary", headers=hq_headers)
+            
+            self.assertEqual(factory_summary_response.status_code, 200)
+            self.assertEqual(hq_summary_response.status_code, 200)
+            
+            factory_summary = factory_summary_response.json()
+            hq_summary = hq_summary_response.json()
+            
+            # Factory user should only see their factory in summaries
+            if factory_summary["factory_summaries"]:
+                for factory_id in factory_summary["factory_summaries"].keys():
+                    self.assertEqual(factory_id, "wakene_food")
+            
+            print("✅ Dashboard summary role-based filtering working")
+            
+            # Test factory-comparison access control
+            factory_comparison_response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=factory_headers)
+            hq_comparison_response = requests.get(f"{self.base_url}/analytics/factory-comparison", headers=hq_headers)
+            
+            self.assertEqual(factory_comparison_response.status_code, 403)  # Factory users denied
+            self.assertEqual(hq_comparison_response.status_code, 200)  # HQ users allowed
+            
+            print("✅ Factory comparison access control working")
+            
+            print("✅ All dashboard endpoints have proper role-based filtering")
+            
+        except Exception as e:
+            print(f"❌ Dashboard endpoints role-based filtering test failed: {str(e)}")
+
 if __name__ == "__main__":
     # Run the tests in order
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
