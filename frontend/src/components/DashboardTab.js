@@ -619,8 +619,8 @@ const DashboardTab = () => {
 
             {/* Production vs Sales Charts - Separate chart for each factory */}
             <div className="space-y-6">
-                <div className="bg-gray-50 rounded-lg p-6">
-                    <h2 className="text-xl font-bold text-gray-800 mb-6">
+                <div className="chart-container-futuristic">
+                    <h2 className="text-xl font-bold text-futuristic-primary mb-6">
                         {user?.role === 'headquarters' ? 'All Factories' : 'Your Factory'} - Production vs Sales Daily Trends (Last 30 Days)
                     </h2>
                     
@@ -640,18 +640,18 @@ const DashboardTab = () => {
                                         return (
                                             <div key={`daily-trend-${factoryId}`} className="space-y-6">
                                                 {/* Preform Chart */}
-                                                <div className="bg-white rounded-lg shadow-lg p-6">
+                                                <div className="glass-card-light p-6">
                                                     <div className="flex items-center justify-between mb-4">
                                                         <h3 className="text-lg font-semibold text-gray-800">
                                                             {preformData.name}
                                                         </h3>
                                                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
+                                                                <div className="w-4 h-4 bg-[#1a355b] rounded-full mr-2"></div>
                                                                 <span>Production</span>
                                                             </div>
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                                <div className="w-4 h-4 bg-[#ffc72c] rounded-full mr-2"></div>
                                                                 <span>Sales</span>
                                                             </div>
                                                         </div>
@@ -664,22 +664,22 @@ const DashboardTab = () => {
                                                     </div>
                                                     
                                                     {/* Preform Summary Stats */}
-                                                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                                                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Total Production</p>
-                                                            <p className="text-lg font-semibold text-blue-900">
+                                                            <p className="text-lg font-semibold text-[#1a355b]">
                                                                 {preformData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Total Sales</p>
-                                                            <p className="text-lg font-semibold text-yellow-600">
+                                                            <p className="text-lg font-semibold text-[#ffc72c]">
                                                                 {preformData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                            <p className="text-lg font-semibold text-blue-700">
+                                                            <p className="text-lg font-semibold text-[#1a355b]">
                                                                 {preformData?.production?.length > 0 
                                                                     ? Math.round(preformData.production.reduce((a, b) => a + b, 0) / preformData.production.length).toLocaleString()
                                                                     : 0}
@@ -687,7 +687,7 @@ const DashboardTab = () => {
                                                         </div>
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                            <p className="text-lg font-semibold text-yellow-700">
+                                                            <p className="text-lg font-semibold text-[#ffc72c]">
                                                                 {preformData?.sales?.length > 0 
                                                                     ? Math.round(preformData.sales.reduce((a, b) => a + b, 0) / preformData.sales.length).toLocaleString()
                                                                     : 0}
@@ -697,18 +697,18 @@ const DashboardTab = () => {
                                                 </div>
                                                 
                                                 {/* Cap Chart */}
-                                                <div className="bg-white rounded-lg shadow-lg p-6">
+                                                <div className="glass-card-light p-6">
                                                     <div className="flex items-center justify-between mb-4">
                                                         <h3 className="text-lg font-semibold text-gray-800">
                                                             {capData.name}
                                                         </h3>
                                                         <div className="flex items-center space-x-4 text-sm text-gray-600">
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
+                                                                <div className="w-4 h-4 bg-[#1a355b] rounded-full mr-2"></div>
                                                                 <span>Production</span>
                                                             </div>
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                                <div className="w-4 h-4 bg-[#ffc72c] rounded-full mr-2"></div>
                                                                 <span>Sales</span>
                                                             </div>
                                                         </div>
@@ -721,22 +721,22 @@ const DashboardTab = () => {
                                                     </div>
                                                     
                                                     {/* Cap Summary Stats */}
-                                                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                                                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Total Production</p>
-                                                            <p className="text-lg font-semibold text-blue-900">
+                                                            <p className="text-lg font-semibold text-[#1a355b]">
                                                                 {capData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Total Sales</p>
-                                                            <p className="text-lg font-semibold text-yellow-600">
+                                                            <p className="text-lg font-semibold text-[#ffc72c]">
                                                                 {capData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                            <p className="text-lg font-semibold text-blue-700">
+                                                            <p className="text-lg font-semibold text-[#1a355b]">
                                                                 {capData?.production?.length > 0 
                                                                     ? Math.round(capData.production.reduce((a, b) => a + b, 0) / capData.production.length).toLocaleString()
                                                                     : 0}
@@ -744,7 +744,7 @@ const DashboardTab = () => {
                                                         </div>
                                                         <div className="text-center">
                                                             <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                            <p className="text-lg font-semibold text-yellow-700">
+                                                            <p className="text-lg font-semibold text-[#ffc72c]">
                                                                 {capData?.sales?.length > 0 
                                                                     ? Math.round(capData.sales.reduce((a, b) => a + b, 0) / capData.sales.length).toLocaleString()
                                                                     : 0}
@@ -757,18 +757,18 @@ const DashboardTab = () => {
                                     } else {
                                         // Regular chart for other factories
                                         return (
-                                            <div key={`daily-trend-${factoryId}`} className="bg-white rounded-lg shadow-lg p-6">
+                                            <div key={`daily-trend-${factoryId}`} className="glass-card-light p-6">
                                                 <div className="flex items-center justify-between mb-4">
                                                     <h3 className="text-lg font-semibold text-gray-800">
                                                         {factoryData.name || `Factory ${factoryId}`}
                                                     </h3>
                                                     <div className="flex items-center space-x-4 text-sm text-gray-600">
                                                         <div className="flex items-center">
-                                                            <div className="w-4 h-4 bg-blue-900 rounded-full mr-2"></div>
+                                                            <div className="w-4 h-4 bg-[#1a355b] rounded-full mr-2"></div>
                                                             <span>Production</span>
                                                         </div>
                                                         <div className="flex items-center">
-                                                            <div className="w-4 h-4 bg-yellow-500 rounded-full mr-2"></div>
+                                                            <div className="w-4 h-4 bg-[#ffc72c] rounded-full mr-2"></div>
                                                             <span>Sales</span>
                                                         </div>
                                                     </div>
@@ -781,22 +781,22 @@ const DashboardTab = () => {
                                                 </div>
                                                 
                                                 {/* Factory Summary Stats */}
-                                                <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+                                                <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
                                                     <div className="text-center">
                                                         <p className="text-sm text-gray-500">Total Production</p>
-                                                        <p className="text-lg font-semibold text-blue-900">
+                                                        <p className="text-lg font-semibold text-[#1a355b]">
                                                             {factoryData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
                                                         <p className="text-sm text-gray-500">Total Sales</p>
-                                                        <p className="text-lg font-semibold text-yellow-600">
+                                                        <p className="text-lg font-semibold text-[#ffc72c]">
                                                             {factoryData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
                                                         <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                        <p className="text-lg font-semibold text-blue-700">
+                                                        <p className="text-lg font-semibold text-[#1a355b]">
                                                             {factoryData?.production?.length > 0 
                                                                 ? Math.round(factoryData.production.reduce((a, b) => a + b, 0) / factoryData.production.length).toLocaleString()
                                                                 : 0}
@@ -804,7 +804,7 @@ const DashboardTab = () => {
                                                     </div>
                                                     <div className="text-center">
                                                         <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                        <p className="text-lg font-semibold text-yellow-700">
+                                                        <p className="text-lg font-semibold text-[#ffc72c]">
                                                             {factoryData?.sales?.length > 0 
                                                                 ? Math.round(factoryData.sales.reduce((a, b) => a + b, 0) / factoryData.sales.length).toLocaleString()
                                                                 : 0}
@@ -813,7 +813,7 @@ const DashboardTab = () => {
                                                 </div>
                                                 
                                                 {/* Debug info (can be removed in production) */}
-                                                <div className="mt-4 text-xs text-gray-500">
+                                                <div className="mt-4 text-xs text-gray-400">
                                                     <p>Data points: {factoryData?.dates?.length || 0} days</p>
                                                     <p>Production data: {factoryData?.production?.length || 0} points</p>
                                                     <p>Sales data: {factoryData?.sales?.length || 0} points</p>
