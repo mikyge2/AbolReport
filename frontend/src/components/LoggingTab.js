@@ -478,7 +478,8 @@ const LoggingTab = () => {
                 </button>
             </div>
 
-                {/* Tab Content */}
+            {/* Tab Content */}
+            <div className="bg-white rounded-lg shadow-md">
                 <div className="p-6">
                     {activeTab === 'create' && (
                         <div>
