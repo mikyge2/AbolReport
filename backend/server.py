@@ -688,13 +688,14 @@ async def get_analytics_trends(
         
         # Group logs by factory and date
         factory_daily_data = {}
+        product_daily_data = {}  # Track product-level data
         overall_daily_data = {}
         
         for log in logs:
             date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
             factory_id = log["factory_id"]
             
-            # Factory-specific data
+            # Factory-specific aggregate data
             if factory_id not in factory_daily_data:
                 factory_daily_data[factory_id] = {}
             
@@ -710,6 +711,29 @@ async def get_analytics_trends(
                     factory_daily_data[factory_id][date_str]["sales"] += item.get("amount", 0)
                 else:
                     factory_daily_data[factory_id][date_str]["sales"] += item
+
+            # Product-specific data tracking
+            if factory_id not in product_daily_data:
+                product_daily_data[factory_id] = {}
+            
+            if date_str not in product_daily_data[factory_id]:
+                product_daily_data[factory_id][date_str] = {}
+            
+            # Track production by product
+            for product, production_amount in log["production_data"].items():
+                if product not in product_daily_data[factory_id][date_str]:
+                    product_daily_data[factory_id][date_str][product] = {"production": 0, "sales": 0}
+                product_daily_data[factory_id][date_str][product]["production"] += production_amount
+            
+            # Track sales by product
+            for product, sales_item in log["sales_data"].items():
+                if product not in product_daily_data[factory_id][date_str]:
+                    product_daily_data[factory_id][date_str][product] = {"production": 0, "sales": 0}
+                
+                if isinstance(sales_item, dict):
+                    product_daily_data[factory_id][date_str][product]["sales"] += sales_item.get("amount", 0)
+                else:
+                    product_daily_data[factory_id][date_str][product]["sales"] += sales_item
 
             
             # Overall data for downtime and stock
