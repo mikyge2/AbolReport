@@ -1020,7 +1020,7 @@ const DashboardTab = () => {
                             )}
                         </div>
                     ) : (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                        <div className="glass-card border-yellow-500/30 p-6">
                             <div className="flex items-center">
                                 <div className="flex-shrink-0">
                                     <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
@@ -1028,8 +1028,8 @@ const DashboardTab = () => {
                                     </svg>
                                 </div>
                                 <div className="ml-3">
-                                    <h3 className="text-sm font-medium text-yellow-800">No Data Available</h3>
-                                    <p className="text-sm text-yellow-700 mt-1">
+                                    <h3 className="text-sm font-medium text-yellow-300">No Data Available</h3>
+                                    <p className="text-sm text-futuristic-muted mt-1">
                                         No production or sales data found for the last 30 days. Please check if daily logs have been created.
                                     </p>
                                 </div>
@@ -1042,25 +1042,25 @@ const DashboardTab = () => {
             {/* Headquarters-only comparison charts */}
             {user?.role === 'headquarters' && Object.keys(comparisonData || {}).length > 0 && (
                 <div className="space-y-6">
-                    <div className="bg-gray-50 rounded-lg p-6">
-                        <h2 className="text-xl font-bold text-gray-800 mb-6">
+                    <div className="chart-container-futuristic">
+                        <h2 className="text-xl font-bold text-futuristic-primary mb-6">
                             Factory Comparison Analytics - Today ({new Date().toLocaleDateString()})
                         </h2>
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold mb-4">Production Comparison</h3>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Production Comparison</h3>
                                 <Bar data={factoryProductionData} options={barChartOptions} />
                             </div>
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold mb-4">Sales Comparison</h3>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Sales Comparison</h3>
                                 <Bar data={factorySalesData} options={barChartOptions} />
                             </div>
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold mb-4">Downtime Comparison</h3>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Downtime Comparison</h3>
                                 <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
                             </div>
-                            <div className="bg-white rounded-lg shadow p-6">
-                                <h3 className="text-lg font-semibold mb-4">Factory Efficiency</h3>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Factory Efficiency</h3>
                                 <Doughnut
                                     data={efficiencyData}
                                     options={{
