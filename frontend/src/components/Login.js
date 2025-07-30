@@ -3,6 +3,8 @@ import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
 const Login = () => {
     const { login } = React.useContext(AuthContext);
     const [username, setUsername] = useState('');
