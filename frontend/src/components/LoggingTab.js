@@ -461,33 +461,22 @@ const LoggingTab = () => {
     );
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Tab Navigation */}
-            <div className="bg-white rounded-lg shadow-md">
-                <div className="border-b border-gray-200">
-                    <nav className="flex space-x-8 px-6">
-                        <button
-                            onClick={() => setActiveTab('create')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'create'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            Create New Log
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('manage')}
-                            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                                activeTab === 'manage'
-                                    ? 'border-primary text-primary'
-                                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                            }`}
-                        >
-                            Manage Existing Logs
-                        </button>
-                    </nav>
-                </div>
+            <div className="flex space-x-2 backdrop-blur-lg bg-white/5 rounded-2xl p-2 border border-white/10">
+                <button
+                    onClick={() => setActiveTab('create')}
+                    className={`nav-tab ${activeTab === 'create' ? 'active' : ''}`}
+                >
+                    Create New Log
+                </button>
+                <button
+                    onClick={() => setActiveTab('manage')}
+                    className={`nav-tab ${activeTab === 'manage' ? 'active' : ''}`}
+                >
+                    Manage Existing Logs
+                </button>
+            </div>
 
                 {/* Tab Content */}
                 <div className="p-6">
