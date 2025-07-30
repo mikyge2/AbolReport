@@ -534,7 +534,7 @@ const LoggingTab = () => {
                                                             <div>
                                                                 <span className="font-medium">Downtime:</span>
                                                                 <br />
-                                                                {log.downtime_hours} hours
+                                                                {log.downtime_hours.toFixed(2)} hours
                                                             </div>
                                                             <div>
                                                                 <span className="font-medium">Created by:</span>
