@@ -479,18 +479,18 @@ const LoggingTab = () => {
             </div>
 
             {/* Tab Content */}
-            <div className="bg-white rounded-lg shadow-md">
+            <div className="glass-card-light">
                 <div className="p-6">
                     {activeTab === 'create' && (
                         <div>
-                            <h2 className="text-2xl font-bold text-primary mb-6">Create Daily Production Log</h2>
+                            <h2 className="text-2xl font-bold text-futuristic-primary mb-6">Create Daily Production Log</h2>
                             {renderForm(handleSubmit, false)}
                         </div>
                     )}
 
                     {activeTab === 'manage' && (
                         <div>
-                            <h2 className="text-2xl font-bold text-primary mb-6">Manage Existing Logs</h2>
+                            <h2 className="text-2xl font-bold text-futuristic-primary mb-6">Manage Existing Logs</h2>
                             
                             {loading ? (
                                 <div className="flex justify-center items-center py-8">
