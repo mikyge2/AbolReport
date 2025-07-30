@@ -189,7 +189,10 @@ const ReportsTab = () => {
                             {loading ? (
                                 <tr>
                                     <td colSpan="7" className="text-center p-6">
-                                        <div className="animate-spin h-8 w-8 border-b-2 border-primary mx-auto" />
+                                        <div className="loading-futuristic">
+                                            <div className="loading-spinner-futuristic"></div>
+                                            <p className="text-futuristic-secondary">Loading report data...</p>
+                                        </div>
                                     </td>
                                 </tr>
                             ) : filteredData.length === 0 ? (
