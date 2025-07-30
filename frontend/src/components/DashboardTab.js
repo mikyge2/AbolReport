@@ -561,7 +561,7 @@ const DashboardTab = () => {
                         <div className="ml-4">
                             <p className="text-sm text-futuristic-muted">Total Downtime</p>
                             <p className="text-2xl font-bold text-red-400">
-                                {dashboardData?.total_downtime?.toLocaleString() || 0}h
+                                {dashboardData?.total_downtime?.toFixed(2) || '0.00'}h
                             </p>
                         </div>
                     </div>
