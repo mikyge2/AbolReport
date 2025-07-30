@@ -752,6 +752,15 @@ async def get_analytics_trends(
                 if factory_id in factory_daily_data and date_str in factory_daily_data[factory_id]:
                     factory_trends["factories"][factory_id]["production"][i] = factory_daily_data[factory_id][date_str]["production"]
                     factory_trends["factories"][factory_id]["sales"][i] = factory_daily_data[factory_id][date_str]["sales"]
+                
+                # Fill product-level data
+                for product in factory_info["products"]:
+                    if (factory_id in product_daily_data and 
+                        date_str in product_daily_data[factory_id] and 
+                        product in product_daily_data[factory_id][date_str]):
+                        
+                        factory_trends["factories"][factory_id]["production_by_product"][product][i] = product_daily_data[factory_id][date_str][product]["production"]
+                        factory_trends["factories"][factory_id]["sales_by_product"][product][i] = product_daily_data[factory_id][date_str][product]["sales"]
         
         # Fill in overall downtime and stock data
         for i, date_str in enumerate(factory_trends["dates"]):
