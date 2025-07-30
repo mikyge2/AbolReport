@@ -150,9 +150,9 @@ const UserManagementTab = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-2xl font-bold text-primary mb-4">
+        <div className="space-y-8">
+            <div className="glass-card-light p-6">
+                <h2 className="text-2xl font-bold text-futuristic-primary mb-6">
                     User Management
                 </h2>
 
