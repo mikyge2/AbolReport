@@ -238,6 +238,11 @@ const ReportsTab = () => {
                                             className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
                                             onClick={() => handleRowClick(log)}
                                         >
+                                            <td className="px-6 py-4">
+                                                <span className="font-mono text-sm text-blue-600">
+                                                    {log.report_id ? log.report_id.substring(0, 8) + '...' : 'N/A'}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4">{new Date(log.date).toLocaleDateString()}</td>
                                             <td className="px-6 py-4">{factories[log.factory_id]?.name || log.factory_id}</td>
                                             <td className="px-6 py-4">{production}</td>
