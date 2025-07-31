@@ -239,8 +239,8 @@ const ReportsTab = () => {
                                             onClick={() => handleRowClick(log)}
                                         >
                                             <td className="px-6 py-4">
-                                                <span className="font-mono text-sm text-blue-600">
-                                                    {log.report_id ? log.report_id.substring(0, 8) + '...' : 'N/A'}
+                                                <span className="font-mono text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                                    {log.report_id || 'N/A'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">{new Date(log.date).toLocaleDateString()}</td>
