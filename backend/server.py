@@ -751,7 +751,7 @@ async def export_excel_report(
         summary_df = pd.DataFrame(summary_data)
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
         
-        # Style summary sheet
+        # Style summary sheet with professional formatting
         summary_worksheet = writer.sheets['Summary']
         
         # Apply header styling to summary sheet
@@ -760,25 +760,59 @@ async def export_excel_report(
             cell.fill = header_fill
             cell.alignment = header_alignment
         
-        # Auto-adjust column widths for summary
-        for column in summary_worksheet.columns:
-            max_length = 0
-            column_letter = column[0].column_letter
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)
-            summary_worksheet.column_dimensions[column_letter].width = adjusted_width
+        # Freeze panes for summary sheet
+        summary_worksheet.freeze_panes = "A2"
         
-        # Add borders to summary sheet
-        for row in summary_worksheet.iter_rows():
+        # Configure summary sheet columns
+        summary_column_config = {
+            'A': {'width': 25, 'style': 'left'},        # Factory
+            'B': {'width': 18, 'style': 'number'},      # Total Production
+            'C': {'width': 18, 'style': 'number'},      # Total Sales
+            'D': {'width': 18, 'style': 'currency'},    # Total Revenue
+            'E': {'width': 20, 'style': 'number'},      # Total Downtime
+            'F': {'width': 18, 'style': 'number'},      # Average Stock
+            'G': {'width': 18, 'style': 'center'},      # Number of Records
+        }
+        
+        # Apply summary column configurations
+        for col_letter, config in summary_column_config.items():
+            summary_worksheet.column_dimensions[col_letter].width = config['width']
+            
+            # Apply styling to data cells in summary sheet
+            for row_num in range(2, summary_worksheet.max_row + 1):
+                cell = summary_worksheet[f"{col_letter}{row_num}"]
+                cell.font = data_font
+                
+                if config['style'] == 'center':
+                    cell.alignment = center_alignment
+                elif config['style'] == 'right':
+                    cell.alignment = right_alignment
+                elif config['style'] == 'number':
+                    cell.alignment = right_alignment
+                    cell.number_format = '#,##0.00'
+                elif config['style'] == 'currency':
+                    cell.alignment = right_alignment
+                    cell.number_format = '"$"#,##0.00'
+                else:
+                    cell.alignment = data_alignment
+        
+        # Add borders and alternating colors to summary sheet
+        for row_num, row in enumerate(summary_worksheet.iter_rows(min_row=2), start=2):
             for cell in row:
                 cell.border = thin_border
-                if cell.row > 1:
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                if row_num % 2 == 0:
+                    cell.fill = light_fill
+        
+        # Add a title to the summary sheet
+        summary_worksheet.insert_rows(1)
+        title_cell = summary_worksheet['A1']
+        title_cell.value = f"Factory Performance Summary Report - Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}"
+        title_cell.font = Font(name="Calibri", bold=True, size=14, color="2F4F4F")
+        title_cell.alignment = Alignment(horizontal="left", vertical="center")
+        summary_worksheet.merge_cells('A1:G1')
+        
+        # Move headers to row 2
+        summary_worksheet.freeze_panes = "A3"
     
     output.seek(0)
     
