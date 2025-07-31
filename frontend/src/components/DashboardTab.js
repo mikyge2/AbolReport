@@ -1107,7 +1107,7 @@ const DashboardTab = () => {
                                                 <div className="h-96 w-full">
                                                     <Line
                                                         data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
-                                                        options={dailyTrendChartOptions}
+                                                        options={createChartOptionsWithFactory(factoryId)}
                                                     />
                                                 </div>
                                                 
