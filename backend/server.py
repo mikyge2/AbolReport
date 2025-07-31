@@ -519,6 +519,7 @@ async def export_excel_report(
         # Base row data
         downtime_reasons_str = "; ".join([f"{reason['reason']} ({reason['hours']}h)" for reason in log.get("downtime_reasons", [])])
         base_row = {
+            "Report ID": log.get("report_id", "N/A"),
             "Date": log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"],
             "Factory": factory_name,
             "SKU Unit": sku_unit,
