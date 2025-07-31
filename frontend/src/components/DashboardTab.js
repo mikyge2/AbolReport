@@ -16,6 +16,7 @@ import {
 } from 'chart.js';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+import DataDetailModal from './DataDetailModal';
 
 // Register Chart.js components
 ChartJS.register(
