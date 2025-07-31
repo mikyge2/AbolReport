@@ -550,6 +550,51 @@ async def export_excel_report(
         # Main data sheet
         df.to_excel(writer, sheet_name='Daily Logs', index=False)
         
+        # Get the workbook and worksheet for styling
+        workbook = writer.book
+        worksheet = writer.sheets['Daily Logs']
+        
+        # Apply styling to headers
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        
+        # Header styling
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Apply header styling
+        for cell in worksheet[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Auto-adjust column widths
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        # Add borders to all cells
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        for row in worksheet.iter_rows():
+            for cell in row:
+                cell.border = thin_border
+                if cell.row > 1:  # Data rows
+                    cell.alignment = Alignment(horizontal="left", vertical="center")
+        
         # Summary sheet
         summary_data = []
         for factory_id, factory_info in FACTORIES.items():
@@ -563,16 +608,45 @@ async def export_excel_report(
                 
                 summary_data.append({
                     "Factory": factory_info["name"],
-                    "Total Production": total_production,
-                    "Total Sales": total_sales,
-                    "Total Revenue": total_revenue,
-                    "Total Downtime (Hours)": total_downtime,
-                    "Average Stock": avg_stock,
+                    "Total Production": f"{total_production:,.2f}",
+                    "Total Sales": f"{total_sales:,.2f}",
+                    "Total Revenue": f"${total_revenue:,.2f}",
+                    "Total Downtime (Hours)": f"{total_downtime:.1f}",
+                    "Average Stock": f"{avg_stock:,.2f}",
                     "Number of Records": len(factory_logs)
                 })
         
         summary_df = pd.DataFrame(summary_data)
         summary_df.to_excel(writer, sheet_name='Summary', index=False)
+        
+        # Style summary sheet
+        summary_worksheet = writer.sheets['Summary']
+        
+        # Apply header styling to summary sheet
+        for cell in summary_worksheet[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Auto-adjust column widths for summary
+        for column in summary_worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            summary_worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        # Add borders to summary sheet
+        for row in summary_worksheet.iter_rows():
+            for cell in row:
+                cell.border = thin_border
+                if cell.row > 1:
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
     
     output.seek(0)
     
