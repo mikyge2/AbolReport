@@ -88,6 +88,24 @@ const ReportsTab = () => {
         }
     };
 
+    // Modal handlers for table row clicks
+    const handleRowClick = (log) => {
+        // Add factory name for better display
+        const logWithFactoryName = {
+            ...log,
+            factory_name: factories[log.factory_id]?.name || log.factory_id
+        };
+        
+        setModalData(logWithFactoryName);
+        setModalType('dailyLog');
+        setIsModalOpen(true);
+    };
+    
+    const handleModalClose = () => {
+        setIsModalOpen(false);
+        setModalData(null);
+    };
+
     const filteredData = reportData.filter((log) => {
         let matches = true;
         if (filter.factory && log.factory_id !== filter.factory) matches = false;
