@@ -323,6 +323,11 @@ async def create_daily_log(log: DailyLogCreate, current_user: User = Depends(get
     
     log_dict = log.dict()
     log_dict["created_by"] = current_user.username
+    
+    # Generate sequential report ID
+    report_id = await get_next_report_id()
+    log_dict["report_id"] = report_id
+    
     log_obj = DailyLog(**log_dict)
     
     await db.daily_logs.insert_one(log_obj.dict())
