@@ -1174,6 +1174,14 @@ const DashboardTab = () => {
                     )}
                 </div>
             </div>
+            
+            {/* Interactive Data Detail Modal */}
+            <DataDetailModal
+                isOpen={isModalOpen}
+                onClose={handleModalClose}
+                data={modalData}
+                type={modalType}
+            />
         </div>
     );
 };
