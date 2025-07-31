@@ -158,6 +158,26 @@ async def get_next_report_id():
     
     return f"RPT-{next_number:05d}"
 
+async def get_next_report_id():
+    """Generate next sequential report ID in format RPT-XXXXX starting from RPT-10000"""
+    # Find the highest report_id that matches the pattern
+    cursor = db.daily_logs.find({"report_id": {"$regex": "^RPT-\\d{5}$"}}).sort("report_id", -1).limit(1)
+    
+    highest_report = None
+    async for doc in cursor:
+        highest_report = doc
+        break
+    
+    if highest_report and highest_report.get('report_id'):
+        # Extract the number and increment
+        current_number = int(highest_report['report_id'].split('-')[1])
+        next_number = current_number + 1
+    else:
+        # Start from 10000 if no existing reports
+        next_number = 10000
+    
+    return f"RPT-{next_number:05d}"
+
 class DailyLog(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     report_id: str = Field(default="")  # Will be set by get_next_report_id()
