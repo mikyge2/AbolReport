@@ -413,6 +413,30 @@ agent_communication:
     message: "✅ EXCEL EXPORT FUNCTIONALITY COMPREHENSIVE TESTING COMPLETED: All Excel export requirements verified and working perfectly. 1) Role-based Access Control: Factory users (wakene_manager) can only export data from their assigned factory (Wakene Food Complex), headquarters users can export all factory data. Factory users cannot bypass filtering even with factory_id parameter. 2) Excel File Generation: openpyxl dependency working correctly, Excel files properly generated with two sheets (Daily Logs and Summary) containing all expected headers and data structure. 3) HTTP Headers: Correct MIME type (application/vnd.openxmlformats-officedocument.spreadsheetml.sheet) and Content-Disposition headers for proper file download with .xlsx extension. 4) Query Parameters: Date range filtering (start_date, end_date) and factory_id parameter work correctly. 5) Authentication: Properly requires bearer token authentication, correctly rejects invalid tokens. 6) Edge Cases: Returns 404 with appropriate error message when no data matches search criteria. Excel export endpoint at /api/export-excel is fully functional with no critical issues found."
   - agent: "testing"
     message: "✅ CONTINUATION TASK BACKEND TESTING COMPLETED: Comprehensive testing of the new created_by_me parameter functionality and Excel export verification completed successfully. 1) created_by_me Parameter Testing: ✅ Factory users with created_by_me=true get only their own logs (2 logs vs 4 total accessible logs). ✅ HQ users with created_by_me=true get only their own logs (5 logs vs 7 total logs from 2 creators and 2 factories). ✅ created_by_me=false returns same results as no parameter (proper default behavior). ✅ created_by_me works correctly with other filters (date range, factory_id). 2) Excel Export Verification: ✅ openpyxl dependency working correctly - Excel files generated with proper MIME type, file signature, and structure (Daily Logs and Summary sheets). ✅ Role-based filtering still working - Factory users get 6440 bytes (own factory only), HQ users get 6807 bytes (all factories). ✅ Factory users cannot bypass filtering even with factory_id parameter. All continuation task requirements are fully functional with no critical issues found."
+
+  - task: "Add unique report_id field to DailyLog model and database entries"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added report_id field to DailyLog model with UUID generation. Updated existing logs with report IDs and included report_id in Excel export formatting."
+
+  - task: "Improve Excel export formatting with better styling and readability"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Enhanced Excel export with professional styling including header formatting, auto-adjusted column widths, borders, proper alignment, and formatted summary data with currency and number formatting."
   - agent: "main"
     message: "CONTINUATION TASK - DASHBOARD GRAPHS & DUMMY DATA: 1) ✅ Populated database with 105 dummy daily logs across all 4 factories (Wakene Food, Amen Water, Mintu Plast, Mintu Export) for the last 30 days with production, sales, downtime, and stock data. 2) ✅ Comprehensive backend testing completed - all dashboard API endpoints working correctly: /api/analytics/trends (30-day data), /api/dashboard-summary (aggregated metrics), /api/analytics/factory-comparison (today's factory data). Data structures match frontend requirements perfectly. 3) ✅ Role-based filtering verified for all endpoints. Ready for frontend testing to ensure dashboard graphs display correctly."
   - agent: "testing"
