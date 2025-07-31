@@ -339,7 +339,8 @@ const DashboardTab = () => {
                 radius: 5,
                 hoverRadius: 7
             }
-        }
+        },
+        onClick: handleChartClick
     };
 
     // Helper function to categorize Mintu Plast products
