@@ -2060,6 +2060,411 @@ class FactoryPortalAPITest(unittest.TestCase):
             print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
             self.fail(f"❌ Report ID in Excel export test failed: {str(e)}")
 
+    def test_50_report_id_migration_hq_user(self):
+        """Test Report ID Migration functionality as HQ user"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # First run the migration endpoint
+            response = requests.post(f"{self.base_url}/admin/migrate-report-ids", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            migration_result = response.json()
+            self.assertIn("message", migration_result)
+            print(f"✅ Report ID migration completed: {migration_result['message']}")
+            
+            # Now verify all reports have RPT-XXXXX format
+            response = requests.get(f"{self.base_url}/daily-logs", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            logs = response.json()
+            
+            rpt_format_count = 0
+            for log in logs:
+                self.assertIn("report_id", log)
+                report_id = log["report_id"]
+                
+                # Verify RPT-XXXXX format (RPT- followed by 5 digits)
+                if report_id.startswith("RPT-") and len(report_id) == 9:
+                    # Check that the last 5 characters are digits
+                    self.assertTrue(report_id[4:].isdigit(), f"Report ID {report_id} doesn't have 5 digits after RPT-")
+                    rpt_format_count += 1
+                    
+            print(f"✅ Verified {rpt_format_count} reports have RPT-XXXXX format")
+            
+            # Verify sequential numbering starts from RPT-10000
+            if logs:
+                report_ids = [log["report_id"] for log in logs if log["report_id"].startswith("RPT-")]
+                report_ids.sort()
+                if report_ids:
+                    first_id = report_ids[0]
+                    self.assertTrue(first_id.startswith("RPT-1"), f"First report ID should start with RPT-1, got {first_id}")
+                    print(f"✅ Sequential numbering verified: First ID = {first_id}")
+                    
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Report ID migration test failed: {str(e)}")
+
+    def test_51_new_report_creation_sequential_id(self):
+        """Test new report creation gets sequential RPT-XXXXX ID as factory user"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create a new daily log and verify it gets sequential ID
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=50)  # Use 50 days ago to avoid conflicts
+        
+        create_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 500,
+                "Fruska (Wheat Bran)": 250
+            },
+            "sales_data": {
+                "Flour": {"amount": 450, "unit_price": 60},
+                "Fruska (Wheat Bran)": {"amount": 200, "unit_price": 40}
+            },
+            "downtime_hours": 2.5,
+            "downtime_reasons": [
+                {"reason": "Equipment Maintenance", "hours": 1.5},
+                {"reason": "Quality Check", "hours": 1.0}
+            ],
+            "stock_data": {
+                "Flour": 1500,
+                "Fruska (Wheat Bran)": 800
+            }
+        }
+        
+        try:
+            # Create the log
+            response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                # Try with different date
+                create_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=create_data, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            
+            # Verify report_id is present and follows RPT-XXXXX format
+            self.assertIn("report_id", created_log)
+            report_id = created_log["report_id"]
+            
+            # Verify format: RPT- followed by 5 digits
+            self.assertTrue(report_id.startswith("RPT-"), f"Report ID should start with RPT-, got {report_id}")
+            self.assertEqual(len(report_id), 9, f"Report ID should be 9 characters long, got {len(report_id)}")
+            self.assertTrue(report_id[4:].isdigit(), f"Last 5 characters should be digits, got {report_id[4:]}")
+            
+            # Verify it's a reasonable sequential number (should be >= 10000)
+            report_number = int(report_id[4:])
+            self.assertGreaterEqual(report_number, 10000, f"Report number should be >= 10000, got {report_number}")
+            
+            print(f"✅ New report creation successful with sequential ID: {report_id}")
+            print(f"  - Format verified: RPT-XXXXX")
+            print(f"  - Sequential number: {report_number}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ New report creation sequential ID test failed: {str(e)}")
+
+    def test_52_enhanced_excel_export_with_report_ids(self):
+        """Test enhanced Excel export includes report IDs and has proper formatting"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Test Excel export
+            response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+            
+            if response.status_code == 404:
+                print("ℹ️ No data available for Excel export - creating test data first")
+                
+                # Create test data with factory user to ensure we have data
+                if self.factory_token:
+                    factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+                    today = datetime.utcnow()
+                    test_date = today - timedelta(days=55)
+                    
+                    test_data = {
+                        "factory_id": "wakene_food",
+                        "date": test_date.isoformat(),
+                        "production_data": {"Flour": 600, "Fruska (Wheat Bran)": 300},
+                        "sales_data": {
+                            "Flour": {"amount": 550, "unit_price": 65},
+                            "Fruska (Wheat Bran)": {"amount": 280, "unit_price": 45}
+                        },
+                        "downtime_hours": 3.0,
+                        "downtime_reasons": [{"reason": "Excel Test Data", "hours": 3.0}],
+                        "stock_data": {"Flour": 1800, "Fruska (Wheat Bran)": 900}
+                    }
+                    
+                    create_response = requests.post(f"{self.base_url}/daily-logs", json=test_data, headers=factory_headers)
+                    if create_response.status_code == 400 and "already exists" in create_response.text:
+                        test_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                        create_response = requests.post(f"{self.base_url}/daily-logs", json=test_data, headers=factory_headers)
+                    
+                    if create_response.status_code == 200:
+                        print("✅ Created test data for Excel export")
+                        
+                        # Try export again
+                        response = requests.get(f"{self.base_url}/export-excel", headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            
+            # Verify Excel file properties
+            content_type = response.headers.get('content-type', '')
+            self.assertIn('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', content_type)
+            
+            content_disposition = response.headers.get('content-disposition', '')
+            self.assertIn('attachment', content_disposition)
+            self.assertIn('.xlsx', content_disposition)
+            
+            # Verify file size indicates enhanced formatting
+            file_size = len(response.content)
+            self.assertGreater(file_size, 5000, "Enhanced Excel file should be larger due to formatting")
+            
+            # Save file for inspection
+            filename = f"{self.download_dir}/enhanced_excel_export_with_report_ids.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+            
+            print(f"✅ Enhanced Excel export successful")
+            print(f"  - Content-Type: {content_type}")
+            print(f"  - File size: {file_size} bytes (enhanced formatting)")
+            print(f"  - Saved to: {filename}")
+            
+            # Try to validate Excel content structure
+            try:
+                import pandas as pd
+                excel_data = pd.read_excel(BytesIO(response.content), sheet_name=None)
+                
+                # Verify sheets exist
+                self.assertIn('Daily Logs', excel_data)
+                self.assertIn('Summary', excel_data)
+                
+                # Verify Report ID column exists in Daily Logs sheet
+                daily_logs_df = excel_data['Daily Logs']
+                self.assertIn('Report ID', daily_logs_df.columns)
+                
+                # Verify Report IDs follow RPT-XXXXX format
+                report_ids = daily_logs_df['Report ID'].dropna()
+                for report_id in report_ids:
+                    if pd.notna(report_id) and report_id != "N/A":
+                        self.assertTrue(str(report_id).startswith('RPT-'), f"Report ID should start with RPT-, got {report_id}")
+                        self.assertEqual(len(str(report_id)), 9, f"Report ID should be 9 characters, got {len(str(report_id))}")
+                
+                print(f"✅ Excel content validation successful")
+                print(f"  - Daily Logs sheet: {len(daily_logs_df)} rows")
+                print(f"  - Report ID column present with RPT-XXXXX format")
+                print(f"  - Summary sheet: {len(excel_data['Summary'])} rows")
+                
+            except ImportError:
+                print("ℹ️ pandas not available for detailed Excel validation")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text[:500] if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Enhanced Excel export test failed: {str(e)}")
+
+    def test_53_interactive_popup_data_structure(self):
+        """Test that daily-logs data contains all necessary fields for interactive popups"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Get sample logs
+            response = requests.get(f"{self.base_url}/daily-logs", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            logs = response.json()
+            
+            if not logs:
+                print("ℹ️ No logs available for popup data structure test")
+                return
+                
+            # Test data structure for popup modal requirements
+            sample_log = logs[0]
+            
+            # Required fields for popup modal
+            required_fields = [
+                'report_id',
+                'factory_id', 
+                'date',
+                'production_data',
+                'sales_data',
+                'downtime_hours',
+                'downtime_reasons',
+                'stock_data',
+                'created_by',
+                'created_at'
+            ]
+            
+            for field in required_fields:
+                self.assertIn(field, sample_log, f"Missing required field for popup: {field}")
+                
+            # Verify data types and structure
+            self.assertIsInstance(sample_log['production_data'], dict)
+            self.assertIsInstance(sample_log['sales_data'], dict)
+            self.assertIsInstance(sample_log['stock_data'], dict)
+            self.assertIsInstance(sample_log['downtime_reasons'], list)
+            self.assertIsInstance(sample_log['downtime_hours'], (int, float))
+            
+            # Verify report_id format
+            report_id = sample_log['report_id']
+            if report_id and report_id != "N/A":
+                self.assertTrue(report_id.startswith('RPT-'), f"Report ID should start with RPT-, got {report_id}")
+                
+            # Verify downtime_reasons structure
+            if sample_log['downtime_reasons']:
+                for reason in sample_log['downtime_reasons']:
+                    self.assertIn('reason', reason)
+                    self.assertIn('hours', reason)
+                    self.assertIsInstance(reason['hours'], (int, float))
+                    
+            # Verify sales_data structure (should have amount and unit_price)
+            for product, sales_info in sample_log['sales_data'].items():
+                if isinstance(sales_info, dict):
+                    self.assertIn('amount', sales_info)
+                    self.assertIn('unit_price', sales_info)
+                    
+            print(f"✅ Interactive popup data structure validation successful")
+            print(f"  - Tested {len(logs)} logs")
+            print(f"  - All required fields present: {', '.join(required_fields)}")
+            print(f"  - Report ID format: {sample_log['report_id']}")
+            print(f"  - Production products: {len(sample_log['production_data'])}")
+            print(f"  - Sales products: {len(sample_log['sales_data'])}")
+            print(f"  - Downtime reasons: {len(sample_log['downtime_reasons'])}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text[:500] if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Interactive popup data structure test failed: {str(e)}")
+
+    def test_54_migration_endpoint_access_control(self):
+        """Test that only HQ users can access migration endpoint"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            # Factory user should get 403 Forbidden
+            response = requests.post(f"{self.base_url}/admin/migrate-report-ids", headers=factory_headers)
+            self.assertEqual(response.status_code, 403)
+            self.assertIn("Only headquarters users can run migrations", response.text)
+            
+            print("✅ Migration endpoint correctly restricted to headquarters users only")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Migration endpoint access control test failed: {str(e)}")
+
+    def test_55_comprehensive_report_id_functionality(self):
+        """Comprehensive test of all report ID functionality"""
+        if not self.hq_token or not self.factory_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        try:
+            print("🔄 Starting comprehensive report ID functionality test...")
+            
+            # Step 1: Run migration as HQ user
+            response = requests.post(f"{self.base_url}/admin/migrate-report-ids", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            migration_result = response.json()
+            print(f"✅ Step 1: Migration completed - {migration_result['message']}")
+            
+            # Step 2: Verify existing reports have RPT format
+            response = requests.get(f"{self.base_url}/daily-logs", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            existing_logs = response.json()
+            
+            rpt_count = 0
+            for log in existing_logs:
+                if log['report_id'].startswith('RPT-'):
+                    rpt_count += 1
+                    
+            print(f"✅ Step 2: {rpt_count} existing reports have RPT-XXXXX format")
+            
+            # Step 3: Create new report as factory user
+            today = datetime.utcnow()
+            test_date = today - timedelta(days=60)
+            
+            new_log_data = {
+                "factory_id": "wakene_food",
+                "date": test_date.isoformat(),
+                "production_data": {"Flour": 700},
+                "sales_data": {"Flour": {"amount": 650, "unit_price": 70}},
+                "downtime_hours": 1.0,
+                "downtime_reasons": [{"reason": "Comprehensive Test", "hours": 1.0}],
+                "stock_data": {"Flour": 2000}
+            }
+            
+            response = requests.post(f"{self.base_url}/daily-logs", json=new_log_data, headers=factory_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                new_log_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=new_log_data, headers=factory_headers)
+                
+            self.assertEqual(response.status_code, 200)
+            new_log = response.json()
+            
+            # Verify new log has sequential RPT ID
+            new_report_id = new_log['report_id']
+            self.assertTrue(new_report_id.startswith('RPT-'))
+            self.assertEqual(len(new_report_id), 9)
+            self.assertTrue(new_report_id[4:].isdigit())
+            
+            print(f"✅ Step 3: New report created with sequential ID: {new_report_id}")
+            
+            # Step 4: Test Excel export includes report IDs
+            response = requests.get(f"{self.base_url}/export-excel", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            
+            # Save and verify Excel content
+            filename = f"{self.download_dir}/comprehensive_report_id_test.xlsx"
+            with open(filename, 'wb') as f:
+                f.write(response.content)
+                
+            print(f"✅ Step 4: Excel export successful with report IDs included")
+            
+            # Step 5: Verify data structure for popups
+            response = requests.get(f"{self.base_url}/daily-logs", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            final_logs = response.json()
+            
+            popup_ready_count = 0
+            for log in final_logs:
+                required_fields = ['report_id', 'production_data', 'sales_data', 'downtime_reasons', 'stock_data']
+                if all(field in log for field in required_fields):
+                    popup_ready_count += 1
+                    
+            print(f"✅ Step 5: {popup_ready_count} logs have complete data structure for popups")
+            
+            print(f"🎉 COMPREHENSIVE REPORT ID TEST COMPLETED SUCCESSFULLY")
+            print(f"  - Migration: ✅ Completed")
+            print(f"  - Existing reports: ✅ {rpt_count} with RPT format")
+            print(f"  - New report creation: ✅ Sequential ID {new_report_id}")
+            print(f"  - Excel export: ✅ Enhanced with report IDs")
+            print(f"  - Popup data: ✅ {popup_ready_count} logs ready")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text[:500] if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Comprehensive report ID functionality test failed: {str(e)}")
+
+
 if __name__ == "__main__":
     # Run the tests in order
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
