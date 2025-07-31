@@ -617,6 +617,51 @@ const DashboardTab = () => {
                 </button>
             </div>
 
+            {/* Headquarters-only comparison charts - MOVED TO TOP */}
+            {user?.role === 'headquarters' && Object.keys(comparisonData || {}).length > 0 && (
+                <div className="space-y-6">
+                    <div className="chart-container-futuristic">
+                        <h2 className="text-xl font-bold text-futuristic-primary mb-6">
+                            Factory Comparison Analytics - Today ({new Date().toLocaleDateString()})
+                        </h2>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Production Comparison</h3>
+                                <Bar data={factoryProductionData} options={barChartOptions} />
+                            </div>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Sales Comparison</h3>
+                                <Bar data={factorySalesData} options={barChartOptions} />
+                            </div>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Downtime Comparison</h3>
+                                <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
+                            </div>
+                            <div className="glass-card-light p-6">
+                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Factory Efficiency</h3>
+                                <Doughnut
+                                    data={efficiencyData}
+                                    options={{
+                                        responsive: true,
+                                        plugins: {
+                                            legend: { position: 'bottom' },
+                                        },
+                                    }}
+                                />
+                                {/* Factory Efficiency Explanation */}
+                                <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                    <p className="text-sm text-gray-700">
+                                        <strong>Factory Efficiency:</strong> Calculated as the ratio of productive time to total available time. 
+                                        Higher efficiency indicates better utilization of resources and minimal downtime. 
+                                        Formula: ((Total Hours - Downtime Hours) / Total Hours) × 100%
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Production vs Sales Charts - Separate chart for each factory */}
             <div className="space-y-6">
                 <div className="chart-container-futuristic">
