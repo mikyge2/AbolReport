@@ -990,7 +990,7 @@ const DashboardTab = () => {
                                                     <div className="h-96 w-full">
                                                         <Line
                                                             data={createFactoryProductionVsSalesChart(preformData, preformData.name)}
-                                                            options={dailyTrendChartOptions}
+                                                            options={createChartOptionsWithFactory('mintu_plast')}
                                                         />
                                                     </div>
                                                     
