@@ -119,7 +119,9 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span className="text-gray-600">Report ID:</span>
-                        <span className="font-medium ml-2 font-mono text-blue-600">{data.report_id || 'N/A'}</span>
+                        <span className="font-medium ml-2 font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                            {data.report_id || 'N/A'}
+                        </span>
                     </div>
                     <div>
                         <span className="text-gray-600">Date:</span>
