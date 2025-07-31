@@ -41,6 +41,11 @@ const DashboardTab = () => {
     const [dashboardData, setDashboardData] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    
+    // Modal state for interactive popups
+    const [modalData, setModalData] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalType, setModalType] = useState('dailyLog');
 
     // Create axios instance with auth headers
     const authAxios = axios.create({
