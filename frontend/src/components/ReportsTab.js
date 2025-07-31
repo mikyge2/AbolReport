@@ -17,6 +17,11 @@ const ReportsTab = () => {
         startDate: '',
         endDate: '',
     });
+    
+    // Modal state for interactive popups
+    const [modalData, setModalData] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalType, setModalType] = useState('dailyLog');
 
     useEffect(() => {
         fetchFactories();
