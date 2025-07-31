@@ -242,7 +242,7 @@ const DashboardTab = () => {
     };
 
     // Enhanced line chart options for daily trends
-    const dailyTrendChartOptions = {
+    const createChartOptionsWithFactory = (factoryId) => ({
         responsive: true,
         maintainAspectRatio: false,
         interaction: {
@@ -332,12 +332,6 @@ const DashboardTab = () => {
                 hoverRadius: 7
             }
         },
-        onClick: handleChartClick
-    };
-    
-    // Create chart options with factory-specific click handler
-    const createChartOptionsWithFactory = (factoryId) => ({
-        ...dailyTrendChartOptions,
         onClick: (event, elements, chart) => {
             if (elements.length > 0) {
                 const element = elements[0];
