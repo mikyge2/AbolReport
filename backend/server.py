@@ -113,6 +113,7 @@ class DowntimeReason(BaseModel):
 
 class DailyLog(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    report_id: str = Field(default_factory=lambda: str(uuid.uuid4()))  # Unique report identifier
     factory_id: str
     date: datetime
     production_data: Dict[str, float]  # product -> amount
