@@ -8,7 +8,7 @@ from io import BytesIO
 class FactoryPortalAPITest(unittest.TestCase):
     def setUp(self):
         # Get the backend URL from the frontend .env file
-        self.base_url = "https://f46146dc-e914-4de1-a61c-b02806f287df.preview.emergentagent.com/api"
+        self.base_url = "https://c40330b2-9fa4-40b6-80d0-a39e1521336a.preview.emergentagent.com/api"
         self.hq_token = None
         self.hq_user_info = None
         self.factory_token = None
