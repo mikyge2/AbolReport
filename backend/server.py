@@ -111,6 +111,33 @@ class DowntimeReason(BaseModel):
     reason: str
     hours: float
 
+async def migrate_existing_report_ids():
+    """Migrate existing reports to use RPT-XXXXX format"""
+    try:
+        # Find all logs without RPT format
+        cursor = db.daily_logs.find({"report_id": {"$not": {"$regex": "^RPT-\\d{5}$"}}})
+        
+        report_counter = 10000
+        updated_count = 0
+        
+        async for log in cursor:
+            new_report_id = f"RPT-{report_counter:05d}"
+            
+            await db.daily_logs.update_one(
+                {"_id": log["_id"]},
+                {"$set": {"report_id": new_report_id}}
+            )
+            
+            report_counter += 1
+            updated_count += 1
+        
+        print(f"✅ Migration completed: Updated {updated_count} reports with new RPT-XXXXX format")
+        return updated_count
+        
+    except Exception as e:
+        print(f"❌ Migration failed: {e}")
+        return 0
+
 async def get_next_report_id():
     """Generate next sequential report ID in format RPT-XXXXX starting from RPT-10000"""
     # Find the highest report_id that matches the pattern
