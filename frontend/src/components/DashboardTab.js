@@ -185,7 +185,8 @@ const DashboardTab = () => {
         setIsModalOpen(false);
         setModalData(null);
     };
-        try {
+
+    const exportToExcel = async () => {
             toast.loading('Generating Excel report...');
             const res = await authAxios.get('/export-excel', { responseType: 'blob' });
             const blob = new Blob([res.data], {
