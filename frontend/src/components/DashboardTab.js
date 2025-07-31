@@ -349,34 +349,6 @@ const DashboardTab = () => {
         }
     });
     
-    const handleChartPointClick = async (factoryId, date) => {
-        try {
-            // Fetch the specific daily log for this factory and date
-            const response = await authAxios.get(`/daily-logs`, {
-                params: {
-                    factory_id: factoryId,
-                    start_date: date,
-                    end_date: date
-                }
-            });
-            
-            if (response.data && response.data.length > 0) {
-                const dailyLog = response.data[0];
-                // Add factory name for better display
-                dailyLog.factory_name = analyticsData.factories?.[factoryId]?.name || factoryId;
-                
-                setModalData(dailyLog);
-                setModalType('dailyLog');
-                setIsModalOpen(true);
-            } else {
-                toast.error('No detailed data found for this data point');
-            }
-        } catch (error) {
-            console.error('Error fetching daily log details:', error);
-            toast.error('Failed to fetch detailed data');
-        }
-    };
-
     // Helper function to categorize Mintu Plast products
     const categorizeMintuPlastProducts = (products) => {
         const preformProducts = [];
