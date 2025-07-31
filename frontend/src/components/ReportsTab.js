@@ -213,7 +213,7 @@ const ReportsTab = () => {
                         <tbody className="bg-white divide-y divide-gray-200">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="text-center p-6">
+                                    <td colSpan="8" className="text-center p-6">
                                         <div className="loading-futuristic">
                                             <div className="loading-spinner-futuristic"></div>
                                             <p className="text-futuristic-secondary">Loading report data...</p>
