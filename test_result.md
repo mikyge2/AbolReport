@@ -425,6 +425,24 @@ agent_communication:
       - working: true
         agent: "main"
         comment: "Added report_id field to DailyLog model with UUID generation. Updated existing logs with report IDs and included report_id in Excel export formatting."
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE REPORT ID MIGRATION TESTING COMPLETED: All report ID functionality working perfectly. 1) Migration Endpoint: POST /api/admin/migrate-report-ids successfully updates existing reports to RPT-XXXXX format starting from RPT-10000. Migration correctly restricted to headquarters users only (403 for factory users). 2) Sequential ID Generation: New daily logs automatically receive sequential report IDs (RPT-10000, RPT-10001, RPT-10002, etc.). Verified sequential numbering works correctly across multiple log creations. 3) Format Validation: All report IDs follow correct RPT-XXXXX format (9 characters: RPT- followed by 5 digits). 4) Excel Export Integration: Report ID column properly included in Excel exports with correct formatting. 5) Database Integration: Report IDs properly stored and retrieved through all API endpoints. 6) Authorization: Only headquarters users can run migration endpoint, factory users correctly denied with 403. Migration functionality is fully operational and meets all requirements."
+
+  - task: "Add admin migration endpoint for report ID updates"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added POST /api/admin/migrate-report-ids endpoint restricted to headquarters users for migrating existing report IDs to RPT-XXXXX format."
+      - working: true
+        agent: "testing"
+        comment: "✅ MIGRATION ENDPOINT COMPREHENSIVE TESTING COMPLETED: POST /api/admin/migrate-report-ids endpoint working perfectly. 1) Headquarters Access: Successfully processes migration requests from headquarters users, returns proper success message with count of updated reports. 2) Access Control: Correctly denies access to factory users with 403 Forbidden status and appropriate error message 'Only headquarters users can run migrations'. 3) Migration Logic: Properly identifies reports without RPT-XXXXX format and updates them sequentially starting from RPT-10000. 4) Idempotent Operation: Can be run multiple times safely - already migrated reports are not affected. 5) Response Format: Returns JSON with descriptive message about migration completion and count of updated reports. Migration endpoint is fully functional and secure."
 
   - task: "Improve Excel export formatting with better styling and readability"
     implemented: true
