@@ -232,7 +232,11 @@ const ReportsTab = () => {
                                     const revenue = Object.values(log.sales_data || {}).reduce((s, v) => s + (v?.amount || 0) * (v?.unit_price || 0), 0);
 
                                     return (
-                                        <tr key={i} className="hover:bg-gray-50">
+                                        <tr 
+                                            key={i} 
+                                            className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                                            onClick={() => handleRowClick(log)}
+                                        >
                                             <td className="px-6 py-4">{new Date(log.date).toLocaleDateString()}</td>
                                             <td className="px-6 py-4">{factories[log.factory_id]?.name || log.factory_id}</td>
                                             <td className="px-6 py-4">{production}</td>
