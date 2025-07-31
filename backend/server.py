@@ -636,45 +636,96 @@ async def export_excel_report(
         worksheet = writer.sheets['Daily Logs']
         
         # Apply styling to headers
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, NamedStyle
+        from openpyxl.utils import get_column_letter
         
-        # Header styling
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center")
+        # Create professional styles
+        header_font = Font(name="Calibri", bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")  # Dark slate gray
+        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         
-        # Apply header styling
+        # Data styles
+        data_font = Font(name="Calibri", size=11)
+        data_alignment = Alignment(horizontal="left", vertical="center")
+        center_alignment = Alignment(horizontal="center", vertical="center")
+        right_alignment = Alignment(horizontal="right", vertical="center")
+        
+        # Currency and number styles
+        currency_style = NamedStyle(name="currency_style")
+        currency_style.font = data_font
+        currency_style.alignment = right_alignment
+        currency_style.number_format = '"$"#,##0.00'
+        
+        number_style = NamedStyle(name="number_style")
+        number_style.font = data_font
+        number_style.alignment = right_alignment
+        number_style.number_format = '#,##0.00'
+        
+        # Apply header styling with freeze panes
         for cell in worksheet[1]:
             cell.font = header_font
             cell.fill = header_fill
             cell.alignment = header_alignment
         
-        # Auto-adjust column widths
-        for column in worksheet.columns:
-            max_length = 0
-            column_letter = column[0].column_letter
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(str(cell.value))
-                except:
-                    pass
-            adjusted_width = min(max_length + 2, 50)  # Cap at 50 characters
-            worksheet.column_dimensions[column_letter].width = adjusted_width
+        # Freeze top row for better navigation
+        worksheet.freeze_panes = "A2"
         
-        # Add borders to all cells
+        # Set specific column widths and apply formatting
+        column_config = {
+            'A': {'width': 12, 'style': 'center'},      # Report ID
+            'B': {'width': 12, 'style': 'center'},      # Date
+            'C': {'width': 20, 'style': 'left'},        # Factory
+            'D': {'width': 12, 'style': 'center'},      # SKU Unit
+            'E': {'width': 18, 'style': 'left'},        # Product
+            'F': {'width': 15, 'style': 'number'},      # Production Amount
+            'G': {'width': 15, 'style': 'number'},      # Sales Amount
+            'H': {'width': 12, 'style': 'currency'},    # Unit Price
+            'I': {'width': 15, 'style': 'currency'},    # Revenue
+            'J': {'width': 15, 'style': 'number'},      # Current Stock
+            'K': {'width': 15, 'style': 'number'},      # Downtime Hours
+            'L': {'width': 30, 'style': 'left'},        # Downtime Reasons
+            'M': {'width': 15, 'style': 'left'},        # Created By
+        }
+        
+        # Apply column configurations
+        for col_letter, config in column_config.items():
+            worksheet.column_dimensions[col_letter].width = config['width']
+            
+            # Apply styling to data cells in this column
+            for row_num in range(2, worksheet.max_row + 1):
+                cell = worksheet[f"{col_letter}{row_num}"]
+                cell.font = data_font
+                
+                if config['style'] == 'center':
+                    cell.alignment = center_alignment
+                elif config['style'] == 'right':
+                    cell.alignment = right_alignment
+                elif config['style'] == 'number':
+                    cell.alignment = right_alignment
+                    cell.number_format = '#,##0.00'
+                elif config['style'] == 'currency':
+                    cell.alignment = right_alignment
+                    cell.number_format = '"$"#,##0.00'
+                else:
+                    cell.alignment = data_alignment
+        
+        # Add professional borders
         thin_border = Border(
-            left=Side(style='thin'),
-            right=Side(style='thin'),
-            top=Side(style='thin'),
-            bottom=Side(style='thin')
+            left=Side(style='thin', color='D3D3D3'),
+            right=Side(style='thin', color='D3D3D3'),
+            top=Side(style='thin', color='D3D3D3'),
+            bottom=Side(style='thin', color='D3D3D3')
         )
         
-        for row in worksheet.iter_rows():
+        # Apply borders and alternating row colors
+        light_fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
+        
+        for row_num, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
             for cell in row:
                 cell.border = thin_border
-                if cell.row > 1:  # Data rows
-                    cell.alignment = Alignment(horizontal="left", vertical="center")
+                # Apply alternating row colors
+                if row_num % 2 == 0:
+                    cell.fill = light_fill
         
         # Summary sheet
         summary_data = []
