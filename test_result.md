@@ -441,3 +441,51 @@ agent_communication:
     message: "CONTINUATION TASK - DASHBOARD GRAPHS & DUMMY DATA: 1) ✅ Populated database with 105 dummy daily logs across all 4 factories (Wakene Food, Amen Water, Mintu Plast, Mintu Export) for the last 30 days with production, sales, downtime, and stock data. 2) ✅ Comprehensive backend testing completed - all dashboard API endpoints working correctly: /api/analytics/trends (30-day data), /api/dashboard-summary (aggregated metrics), /api/analytics/factory-comparison (today's factory data). Data structures match frontend requirements perfectly. 3) ✅ Role-based filtering verified for all endpoints. Ready for frontend testing to ensure dashboard graphs display correctly."
   - agent: "testing"
     message: "✅ COMPREHENSIVE FRONTEND DASHBOARD TESTING COMPLETED: All major dashboard and reports functionality verified successfully with 105 dummy daily logs. 1) ✅ DASHBOARD GRAPHS: All factory production vs sales line charts rendering correctly with 29 data points. Summary cards displaying accurate data (Total Downtime: 409.2h, Active Factories: 4, Total Stock: 1,754,138). 2) ✅ MINTU PLAST SEPARATE CHARTS: Key requirement successfully implemented - both Preform and Cap charts found and rendering properly for headquarters users. 3) ✅ ROLE-BASED FILTERING: HQ users see all 4 factories, factory users see only their own data. Factory comparison charts correctly hidden from factory users. 4) ✅ REPORTS & ANALYTICS: Total Revenue ($248,314.4) and Total Downtime cards working, data table with all required columns displaying correctly with proper calculations. Factory filtering dropdown working. 5) ✅ API INTEGRATION: All endpoints working (/api/analytics/trends, /api/dashboard-summary, /api/analytics/factory-comparison, /api/daily-logs). 6) ✅ USER INTERFACE: Smooth navigation, loading states, responsive design, no JavaScript errors in core functionality. 7) ❌ EXCEL EXPORT ISSUE: Frontend implementation correct but backend returns 500 error - needs main agent investigation. Overall: Dashboard graphs and reports displaying dummy data correctly as required."
+
+  - task: "Reorganize Dashboard Tab layout - move Factory Comparison above All Factories Overview"
+    implemented: true
+    working: true
+    file: "frontend/src/components/DashboardTab.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Successfully moved Factory Comparison Analytics - Today section above All Factories Overview - Production vs Sales Trends section in the dashboard layout."
+
+  - task: "Add interactive popups for graph data points and table rows"
+    implemented: true
+    working: true
+    file: "frontend/src/components/DashboardTab.js, ReportsTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added interactive popups using DataDetailModal for chart data points in Dashboard tab and table rows in Reports tab. Added factory-specific click handlers and modal state management."
+
+  - task: "Add Factory Efficiency explanation text below the doughnut chart"
+    implemented: true
+    working: true
+    file: "frontend/src/components/DashboardTab.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added explanatory text below Factory Efficiency doughnut chart explaining calculation method and meaning of efficiency metrics."
+
+  - task: "Display report_id in UI components (tables and modals)"
+    implemented: true
+    working: true
+    file: "frontend/src/components/ReportsTab.js, DataDetailModal.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Added report_id column to Reports table with truncated display and included full report_id in DataDetailModal for detailed view."
