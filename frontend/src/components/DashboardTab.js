@@ -187,6 +187,7 @@ const DashboardTab = () => {
     };
 
     const exportToExcel = async () => {
+        try {
             toast.loading('Generating Excel report...');
             const res = await authAxios.get('/export-excel', { responseType: 'blob' });
             const blob = new Blob([res.data], {
