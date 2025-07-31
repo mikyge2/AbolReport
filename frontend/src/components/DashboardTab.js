@@ -249,47 +249,8 @@ const DashboardTab = () => {
         return chartData;
     };
 
-    // Create chart options with factory-specific click handler
-    const createChartOptionsWithFactory = (factoryId) => ({
-        ...dailyTrendChartOptions,
-        onClick: (event, elements, chart) => {
-            if (elements.length > 0) {
-                const element = elements[0];
-                const index = element.index;
-                const date = chart.data.labels[index];
-                
-                handleChartPointClick(factoryId, date);
-            }
-        }
-    });
-    
-    const handleChartPointClick = async (factoryId, date) => {
-        try {
-            // Fetch the specific daily log for this factory and date
-            const response = await authAxios.get(`/daily-logs`, {
-                params: {
-                    factory_id: factoryId,
-                    start_date: date,
-                    end_date: date
-                }
-            });
-            
-            if (response.data && response.data.length > 0) {
-                const dailyLog = response.data[0];
-                // Add factory name for better display
-                dailyLog.factory_name = analyticsData.factories?.[factoryId]?.name || factoryId;
-                
-                setModalData(dailyLog);
-                setModalType('dailyLog');
-                setIsModalOpen(true);
-            } else {
-                toast.error('No detailed data found for this data point');
-            }
-        } catch (error) {
-            console.error('Error fetching daily log details:', error);
-            toast.error('Failed to fetch detailed data');
-        }
-    };
+    // Enhanced line chart options for daily trends
+    const dailyTrendChartOptions = {
         responsive: true,
         maintainAspectRatio: false,
         interaction: {
@@ -380,6 +341,48 @@ const DashboardTab = () => {
             }
         },
         onClick: handleChartClick
+    };
+    
+    // Create chart options with factory-specific click handler
+    const createChartOptionsWithFactory = (factoryId) => ({
+        ...dailyTrendChartOptions,
+        onClick: (event, elements, chart) => {
+            if (elements.length > 0) {
+                const element = elements[0];
+                const index = element.index;
+                const date = chart.data.labels[index];
+                
+                handleChartPointClick(factoryId, date);
+            }
+        }
+    });
+    
+    const handleChartPointClick = async (factoryId, date) => {
+        try {
+            // Fetch the specific daily log for this factory and date
+            const response = await authAxios.get(`/daily-logs`, {
+                params: {
+                    factory_id: factoryId,
+                    start_date: date,
+                    end_date: date
+                }
+            });
+            
+            if (response.data && response.data.length > 0) {
+                const dailyLog = response.data[0];
+                // Add factory name for better display
+                dailyLog.factory_name = analyticsData.factories?.[factoryId]?.name || factoryId;
+                
+                setModalData(dailyLog);
+                setModalType('dailyLog');
+                setIsModalOpen(true);
+            } else {
+                toast.error('No detailed data found for this data point');
+            }
+        } catch (error) {
+            console.error('Error fetching daily log details:', error);
+            toast.error('Failed to fetch detailed data');
+        }
     };
 
     // Helper function to categorize Mintu Plast products
