@@ -144,40 +144,32 @@ const DashboardTab = () => {
         }
     };
 
-    // Modal handlers
-    const handleChartClick = async (event, elements, chart) => {
-        if (elements.length > 0) {
-            const element = elements[0];
-            const datasetIndex = element.datasetIndex;
-            const index = element.index;
-            
-            // Get the clicked data point information
-            const factoryId = chart.canvas.getAttribute('data-factory-id');
-            const date = chart.data.labels[index];
-            
-            try {
-                // Fetch the specific daily log for this factory and date
-                const response = await authAxios.get(`/daily-logs`, {
-                    params: {
-                        factory_id: factoryId,
-                        start_date: date,
-                        end_date: date
-                    }
-                });
-                
-                if (response.data && response.data.length > 0) {
-                    const dailyLog = response.data[0];
-                    // Add factory name for better display
-                    dailyLog.factory_name = analyticsData.factories?.[factoryId]?.name || factoryId;
-                    
-                    setModalData(dailyLog);
-                    setModalType('dailyLog');
-                    setIsModalOpen(true);
+    // Unified modal handlers for interactive popups
+    const handleChartPointClick = async (factoryId, date) => {
+        try {
+            // Fetch the specific daily log for this factory and date
+            const response = await authAxios.get(`/daily-logs`, {
+                params: {
+                    factory_id: factoryId,
+                    start_date: date,
+                    end_date: date
                 }
-            } catch (error) {
-                console.error('Error fetching daily log details:', error);
-                toast.error('Failed to fetch detailed data');
+            });
+            
+            if (response.data && response.data.length > 0) {
+                const dailyLog = response.data[0];
+                // Add factory name for better display
+                dailyLog.factory_name = analyticsData.factories?.[factoryId]?.name || factoryId;
+                
+                setModalData(dailyLog);
+                setModalType('dailyLog');
+                setIsModalOpen(true);
+            } else {
+                toast.error('No detailed data found for this data point');
             }
+        } catch (error) {
+            console.error('Error fetching daily log details:', error);
+            toast.error('Failed to fetch detailed data');
         }
     };
     
