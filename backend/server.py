@@ -532,6 +532,15 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     
     return {"detail": "User deleted successfully"}
 
+# Add migration endpoint for admin use
+@api_router.post("/admin/migrate-report-ids")
+async def migrate_report_ids_endpoint(current_user: User = Depends(get_current_user)):
+    if current_user.role != "headquarters":
+        raise HTTPException(status_code=403, detail="Only headquarters users can run migrations")
+    
+    updated_count = await migrate_existing_report_ids()
+    return {"message": f"Migration completed: Updated {updated_count} reports"}
+
 @api_router.get("/export-excel")
 async def export_excel_report(
     factory_id: Optional[str] = None,
