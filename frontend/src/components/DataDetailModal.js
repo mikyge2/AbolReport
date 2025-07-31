@@ -118,6 +118,10 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                 <h4 className="font-semibold text-gray-800 mb-2">ℹ️ Log Information</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
+                        <span className="text-gray-600">Report ID:</span>
+                        <span className="font-medium ml-2 font-mono text-blue-600">{data.report_id || 'N/A'}</span>
+                    </div>
+                    <div>
                         <span className="text-gray-600">Date:</span>
                         <span className="font-medium ml-2">{new Date(data.date).toLocaleDateString()}</span>
                     </div>
