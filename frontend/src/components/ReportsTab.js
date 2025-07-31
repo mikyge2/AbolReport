@@ -3,6 +3,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../context/AuthContext';
+import DataDetailModal from './DataDetailModal';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
