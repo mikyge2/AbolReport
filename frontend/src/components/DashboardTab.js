@@ -162,7 +162,7 @@ const DashboardTab = () => {
                 dailyLog.factory_name = analyticsData.factories?.[factoryId]?.name || factoryId;
                 
                 setModalData(dailyLog);
-                setModalType('dailyLog');
+                setModalType('daily_log');
                 setIsModalOpen(true);
             } else {
                 toast.error('No detailed data found for this data point');
