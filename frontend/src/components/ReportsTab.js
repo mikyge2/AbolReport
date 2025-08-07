@@ -249,8 +249,9 @@ const ReportsTab = () => {
                                     return (
                                         <tr 
                                             key={i} 
-                                            className="hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                                            className="hover:bg-blue-50 cursor-pointer transition-colors duration-200 border-l-2 border-transparent hover:border-blue-400"
                                             onClick={() => handleRowClick(log)}
+                                            title="Click to view detailed information"
                                         >
                                             <td className="px-6 py-4">
                                                 <span className="font-mono text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
