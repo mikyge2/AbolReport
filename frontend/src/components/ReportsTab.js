@@ -186,12 +186,14 @@ const ReportsTab = () => {
                 {/* Summary Cards - Only Total Revenue and Total Downtime */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <div className="stat-card-futuristic">
-                        <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Revenue</h3>
-                        <p className="text-2xl font-bold text-[#ffc72c]">${totals.revenue.toFixed(2)}</p>
+                        <h3 className="text-lg font-semibold text-futuristic-primary mb-2">💰 Total Revenue</h3>
+                        <p className="text-3xl font-bold text-[#ffc72c]">${totals.revenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                        <p className="text-sm text-futuristic-muted mt-1">Across all selected reports</p>
                     </div>
                     <div className="stat-card-futuristic">
-                        <h3 className="text-sm font-medium text-futuristic-muted mb-1">Total Downtime</h3>
-                        <p className="text-2xl font-bold text-red-400">{totals.downtime.toFixed(2)}h</p>
+                        <h3 className="text-lg font-semibold text-futuristic-primary mb-2">⏱️ Total Downtime</h3>
+                        <p className="text-3xl font-bold text-red-400">{totals.downtime.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} hours</p>
+                        <p className="text-sm text-futuristic-muted mt-1">Total operational downtime</p>
                     </div>
                 </div>
 
