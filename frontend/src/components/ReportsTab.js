@@ -206,17 +206,22 @@ const ReportsTab = () => {
 
                 {/* Data Table */}
                 <div className="overflow-x-auto">
+                    <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4 rounded">
+                        <p className="text-sm text-blue-800">
+                            💡 <strong>Tip:</strong> Click on any row in the table below to view detailed information for that report.
+                        </p>
+                    </div>
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                             <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Report ID</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Factory</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Production</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sales</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revenue</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Downtime</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created By</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Report ID</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Factory</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Production</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sales</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Revenue</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Downtime</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
