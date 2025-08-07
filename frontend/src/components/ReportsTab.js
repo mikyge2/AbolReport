@@ -90,15 +90,22 @@ const ReportsTab = () => {
 
     // Modal handlers for table row clicks
     const handleRowClick = (log) => {
-        // Add factory name for better display
-        const logWithFactoryName = {
-            ...log,
-            factory_name: factories[log.factory_id]?.name || log.factory_id
-        };
-        
-        setModalData(logWithFactoryName);
-        setModalType('daily_log');
-        setIsModalOpen(true);
+        try {
+            // Add factory name for better display
+            const logWithFactoryName = {
+                ...log,
+                factory_name: factories[log.factory_id]?.name || log.factory_id
+            };
+            
+            setModalData(logWithFactoryName);
+            setModalType('daily_log');
+            setIsModalOpen(true);
+            
+            toast.success(`Viewing details for Report ${log.report_id || 'N/A'}`);
+        } catch (error) {
+            console.error('Error opening report details:', error);
+            toast.error('Failed to open report details');
+        }
     };
     
     const handleModalClose = () => {
