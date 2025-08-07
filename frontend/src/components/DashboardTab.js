@@ -147,6 +147,7 @@ const DashboardTab = () => {
     // Unified modal handlers for interactive popups
     const handleChartPointClick = async (factoryId, date) => {
         try {
+            toast.loading('Loading detailed information...');
             // Fetch the specific daily log for this factory and date
             const response = await authAxios.get(`/daily-logs`, {
                 params: {
@@ -156,6 +157,8 @@ const DashboardTab = () => {
                 }
             });
             
+            toast.dismiss(); // Remove loading toast
+            
             if (response.data && response.data.length > 0) {
                 const dailyLog = response.data[0];
                 // Add factory name for better display
@@ -164,12 +167,15 @@ const DashboardTab = () => {
                 setModalData(dailyLog);
                 setModalType('daily_log');
                 setIsModalOpen(true);
+                
+                toast.success('Detailed information loaded!');
             } else {
                 toast.error('No detailed data found for this data point');
             }
         } catch (error) {
+            toast.dismiss();
             console.error('Error fetching daily log details:', error);
-            toast.error('Failed to fetch detailed data');
+            toast.error('Failed to fetch detailed data. Please try again.');
         }
     };
     
