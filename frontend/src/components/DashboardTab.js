@@ -720,9 +720,18 @@ const DashboardTab = () => {
             {/* Production vs Sales Charts - Separate chart for each factory */}
             <div className="space-y-6">
                 <div className="chart-container-futuristic">
-                    <h2 className="text-xl font-bold text-futuristic-primary mb-6">
-                        📊 {user?.role === 'headquarters' ? 'All Factories Overview' : 'Factory Performance'} - Production vs Sales Trends (30-Day Period)
-                    </h2>
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-bold text-futuristic-primary">
+                            📊 {user?.role === 'headquarters' ? 'All Factories Overview' : 'Factory Performance'} - Production vs Sales Trends (30-Day Period)
+                        </h2>
+                    </div>
+                    
+                    {/* Interactive Tip */}
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded">
+                        <p className="text-sm text-yellow-800">
+                            💡 <strong>Interactive Charts:</strong> Click on any data point in the charts below to view detailed production information for that specific date.
+                        </p>
+                    </div>
                     
                     {Object.keys(factoriesToDisplay).length > 0 ? (
                         <div className="grid grid-cols-1 gap-8">
