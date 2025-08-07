@@ -97,7 +97,7 @@ const ReportsTab = () => {
         };
         
         setModalData(logWithFactoryName);
-        setModalType('dailyLog');
+        setModalType('daily_log');
         setIsModalOpen(true);
     };
     
