@@ -4,7 +4,7 @@ import React from 'react';
 const DataDetailModal = ({ isOpen, onClose, data, type }) => {
     if (!isOpen || !data) return null;
 
-    const formatCurrency = (value) => `$${parseFloat(value).toFixed(2)}`;
+    const formatCurrency = (value) => `$${parseFloat(value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     const formatNumber = (value) => parseFloat(value).toLocaleString();
 
     const renderDailyLogDetails = () => (
