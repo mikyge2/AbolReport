@@ -135,12 +135,6 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                         <span className="text-gray-600">Factory:</span>
                         <span className="font-medium ml-2">{data.factory_name || data.factory_id}</span>
                     </div>
-                    <div>
-                        <span className="text-gray-600">Efficiency:</span>
-                        <span className="font-medium ml-2">
-                            {data.efficiency ? `${data.efficiency.toFixed(1)}%` : 'N/A'}
-                        </span>
-                    </div>
                 </div>
             </div>
         </div>
