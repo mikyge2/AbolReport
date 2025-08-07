@@ -498,14 +498,14 @@ agent_communication:
         agent: "main"
         comment: "Added explanatory text below Factory Efficiency doughnut chart explaining calculation method and meaning of efficiency metrics."
 
-  - task: "Display report_id in UI components (tables and modals)"
+  - task: "Fix interactive popup information display and improve formatting"
     implemented: true
     working: true
-    file: "frontend/src/components/ReportsTab.js, DataDetailModal.js"
+    file: "frontend/src/components/DashboardTab.js, ReportsTab.js, DataDetailModal.js"
     stuck_count: 0
-    priority: "medium"
-    needs_retesting: false
+    priority: "high"
+    needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Added report_id column to Reports table with truncated display and included full report_id in DataDetailModal for detailed view."
+        comment: "Fixed modal type mismatch issue where components were passing 'dailyLog' but modal expected 'daily_log', causing popups to show incorrect content. Enhanced Total Revenue formatting with comma separators using toLocaleString(). Improved labels with larger font sizes, icons, and descriptive text. Added interactive tips for both Dashboard charts and Reports table. Improved popup titles and added better toast feedback messages. Enhanced table row hover effects and click indicators."
