@@ -283,12 +283,27 @@ const LoggingTab = () => {
                             type="number"
                             min="0"
                             step="0.1"
-                            value={formData.downtime_hours}
+                            value={formData.downtime_hours === 0 ? '' : formData.downtime_hours}
                             onChange={(e) => {
                                 const hours = parseFloat(e.target.value) || 0;
                                 setFormData({ ...formData, downtime_hours: hours });
                                 handleDowntimeHoursChange(hours);
                             }}
+                            onFocus={(e) => {
+                                // Clear the field if it's 0
+                                if (parseFloat(e.target.value) === 0) {
+                                    e.target.value = '';
+                                }
+                            }}
+                            onBlur={(e) => {
+                                // If field is empty on blur, set it back to 0
+                                if (e.target.value === '') {
+                                    const hours = 0;
+                                    setFormData({ ...formData, downtime_hours: hours });
+                                    handleDowntimeHoursChange(hours);
+                                }
+                            }}
+                            placeholder="Enter downtime hours (e.g., 2.5)"
                             className="w-full px-3 py-2 border border-gray-300 rounded-md"
                         />
                     </div>
