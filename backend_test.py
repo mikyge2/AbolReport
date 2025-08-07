@@ -2465,6 +2465,479 @@ class FactoryPortalAPITest(unittest.TestCase):
             self.fail(f"❌ Comprehensive report ID functionality test failed: {str(e)}")
 
 
+    def test_35_daily_logs_complete_data_structure_for_popups(self):
+        """Test daily-logs endpoint returns complete data structures for interactive popups"""
+        if not self.factory_token or not self.hq_token:
+            self.skipTest("Tokens not available, skipping test")
+            
+        factory_headers = {"Authorization": f"Bearer {self.factory_token}"}
+        hq_headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create comprehensive test data with all required fields for popups
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=25)
+        
+        comprehensive_log_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 500.75,
+                "Fruska (Wheat Bran)": 250.50,
+                "Fruskelo (Wheat Germ)": 125.25
+            },
+            "sales_data": {
+                "Flour": {"amount": 450.50, "unit_price": 55.75},
+                "Fruska (Wheat Bran)": {"amount": 200.25, "unit_price": 35.50},
+                "Fruskelo (Wheat Germ)": {"amount": 100.00, "unit_price": 45.25}
+            },
+            "downtime_hours": 4.5,
+            "downtime_reasons": [
+                {"reason": "Equipment Maintenance", "hours": 2.5},
+                {"reason": "Power Outage", "hours": 1.0},
+                {"reason": "Staff Training", "hours": 1.0}
+            ],
+            "stock_data": {
+                "Flour": 1250.75,
+                "Fruska (Wheat Bran)": 625.50,
+                "Fruskelo (Wheat Germ)": 312.25
+            }
+        }
+        
+        try:
+            # Create comprehensive test log
+            response = requests.post(f"{self.base_url}/daily-logs", json=comprehensive_log_data, headers=factory_headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                comprehensive_log_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=comprehensive_log_data, headers=factory_headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            
+            # Test factory user access - get logs for popup data
+            response = requests.get(f"{self.base_url}/daily-logs", headers=factory_headers)
+            self.assertEqual(response.status_code, 200)
+            factory_logs = response.json()
+            
+            # Find our test log
+            test_log = None
+            for log in factory_logs:
+                if log["id"] == created_log["id"]:
+                    test_log = log
+                    break
+                    
+            self.assertIsNotNone(test_log, "Test log not found in factory user results")
+            
+            # Verify all required fields for interactive popups are present
+            required_fields = [
+                "id", "report_id", "factory_id", "date", "production_data", 
+                "sales_data", "downtime_hours", "downtime_reasons", 
+                "stock_data", "created_by", "created_at"
+            ]
+            
+            for field in required_fields:
+                self.assertIn(field, test_log, f"Missing required field for popup: {field}")
+                
+            # Verify report_id format (RPT-XXXXX)
+            self.assertRegex(test_log["report_id"], r"^RPT-\d{5}$", "Report ID should be in RPT-XXXXX format")
+            
+            # Verify production_data structure
+            self.assertIsInstance(test_log["production_data"], dict)
+            self.assertGreater(len(test_log["production_data"]), 0)
+            for product, amount in test_log["production_data"].items():
+                self.assertIsInstance(amount, (int, float))
+                self.assertGreater(amount, 0)
+                
+            # Verify sales_data structure with amount and unit_price
+            self.assertIsInstance(test_log["sales_data"], dict)
+            for product, sales_info in test_log["sales_data"].items():
+                self.assertIsInstance(sales_info, dict)
+                self.assertIn("amount", sales_info)
+                self.assertIn("unit_price", sales_info)
+                self.assertIsInstance(sales_info["amount"], (int, float))
+                self.assertIsInstance(sales_info["unit_price"], (int, float))
+                
+            # Verify downtime_reasons structure
+            self.assertIsInstance(test_log["downtime_reasons"], list)
+            self.assertGreater(len(test_log["downtime_reasons"]), 0)
+            total_downtime_from_reasons = 0
+            for reason in test_log["downtime_reasons"]:
+                self.assertIn("reason", reason)
+                self.assertIn("hours", reason)
+                self.assertIsInstance(reason["hours"], (int, float))
+                total_downtime_from_reasons += reason["hours"]
+                
+            # Verify downtime hours match sum of reasons
+            self.assertEqual(test_log["downtime_hours"], total_downtime_from_reasons)
+            
+            # Verify stock_data structure
+            self.assertIsInstance(test_log["stock_data"], dict)
+            for product, stock in test_log["stock_data"].items():
+                self.assertIsInstance(stock, (int, float))
+                self.assertGreaterEqual(stock, 0)
+                
+            # Calculate revenue for popup display
+            total_revenue = 0
+            for product, sales_info in test_log["sales_data"].items():
+                revenue = sales_info["amount"] * sales_info["unit_price"]
+                total_revenue += revenue
+                
+            print("✅ Daily logs complete data structure verification for popups successful")
+            print(f"  - Report ID: {test_log['report_id']}")
+            print(f"  - Factory: {test_log['factory_id']}")
+            print(f"  - Products: {len(test_log['production_data'])}")
+            print(f"  - Total Revenue: ${total_revenue:,.2f}")
+            print(f"  - Downtime Reasons: {len(test_log['downtime_reasons'])}")
+            print(f"  - Created By: {test_log['created_by']}")
+            
+            # Test HQ user access - should see factory information
+            response = requests.get(f"{self.base_url}/daily-logs", headers=hq_headers)
+            self.assertEqual(response.status_code, 200)
+            hq_logs = response.json()
+            
+            # Verify HQ user can see logs from multiple factories
+            factory_ids = set(log["factory_id"] for log in hq_logs)
+            print(f"  - HQ user sees logs from {len(factory_ids)} factories: {list(factory_ids)}")
+            
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Daily logs complete data structure test failed: {str(e)}")
+
+    def test_36_daily_logs_filtering_for_chart_clicks(self):
+        """Test daily-logs endpoint filtering by factory_id, start_date, and end_date for chart interactions"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        # Create test data across different factories and dates
+        today = datetime.utcnow()
+        
+        test_logs = [
+            {
+                "factory_id": "wakene_food",
+                "date": (today - timedelta(days=30)).isoformat(),
+                "production_data": {"Flour": 300},
+                "sales_data": {"Flour": {"amount": 250, "unit_price": 50}},
+                "downtime_hours": 2.0,
+                "downtime_reasons": [{"reason": "Maintenance", "hours": 2.0}],
+                "stock_data": {"Flour": 800}
+            },
+            {
+                "factory_id": "amen_water",
+                "date": (today - timedelta(days=15)).isoformat(),
+                "production_data": {"360ml": 1000, "600ml": 800},
+                "sales_data": {
+                    "360ml": {"amount": 900, "unit_price": 2.5},
+                    "600ml": {"amount": 700, "unit_price": 3.0}
+                },
+                "downtime_hours": 1.5,
+                "downtime_reasons": [{"reason": "Quality Check", "hours": 1.5}],
+                "stock_data": {"360ml": 2000, "600ml": 1500}
+            },
+            {
+                "factory_id": "mintu_plast",
+                "date": (today - timedelta(days=5)).isoformat(),
+                "production_data": {"Preform 27g/28mm": 5000, "Cap 1.75g/30mm": 3000},
+                "sales_data": {
+                    "Preform 27g/28mm": {"amount": 4500, "unit_price": 0.15},
+                    "Cap 1.75g/30mm": {"amount": 2800, "unit_price": 0.05}
+                },
+                "downtime_hours": 3.0,
+                "downtime_reasons": [
+                    {"reason": "Equipment Setup", "hours": 2.0},
+                    {"reason": "Material Change", "hours": 1.0}
+                ],
+                "stock_data": {"Preform 27g/28mm": 10000, "Cap 1.75g/30mm": 8000}
+            }
+        ]
+        
+        created_log_ids = []
+        
+        try:
+            # Create test logs
+            for i, log_data in enumerate(test_logs):
+                response = requests.post(f"{self.base_url}/daily-logs", json=log_data, headers=headers)
+                if response.status_code == 400 and "already exists" in response.text:
+                    # Adjust date if conflict
+                    adjusted_date = datetime.fromisoformat(log_data["date"].replace('Z', '+00:00')) - timedelta(days=i+1)
+                    log_data["date"] = adjusted_date.isoformat()
+                    response = requests.post(f"{self.base_url}/daily-logs", json=log_data, headers=headers)
+                    
+                self.assertEqual(response.status_code, 200)
+                created_log = response.json()
+                created_log_ids.append(created_log["id"])
+                
+            print(f"✅ Created {len(created_log_ids)} test logs for filtering tests")
+            
+            # Test 1: Filter by specific factory_id (chart click on factory)
+            response = requests.get(f"{self.base_url}/daily-logs?factory_id=wakene_food", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            wakene_logs = response.json()
+            
+            # All logs should be from wakene_food
+            for log in wakene_logs:
+                self.assertEqual(log["factory_id"], "wakene_food")
+                
+            print(f"✅ Factory filtering: {len(wakene_logs)} logs from wakene_food")
+            
+            # Test 2: Filter by date range (chart click on time period)
+            start_date = (today - timedelta(days=20)).isoformat()
+            end_date = today.isoformat()
+            
+            response = requests.get(f"{self.base_url}/daily-logs?start_date={start_date}&end_date={end_date}", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            date_filtered_logs = response.json()
+            
+            # Verify all logs are within date range
+            for log in date_filtered_logs:
+                log_date = datetime.fromisoformat(log["date"].replace('Z', '+00:00'))
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                self.assertGreaterEqual(log_date, start_dt)
+                self.assertLessEqual(log_date, end_dt)
+                
+            print(f"✅ Date range filtering: {len(date_filtered_logs)} logs in last 20 days")
+            
+            # Test 3: Combined filtering (factory + date range)
+            response = requests.get(f"{self.base_url}/daily-logs?factory_id=amen_water&start_date={start_date}&end_date={end_date}", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            combined_filtered_logs = response.json()
+            
+            # All logs should be from amen_water and within date range
+            for log in combined_filtered_logs:
+                self.assertEqual(log["factory_id"], "amen_water")
+                log_date = datetime.fromisoformat(log["date"].replace('Z', '+00:00'))
+                start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+                self.assertGreaterEqual(log_date, start_dt)
+                self.assertLessEqual(log_date, end_dt)
+                
+            print(f"✅ Combined filtering: {len(combined_filtered_logs)} logs from amen_water in last 20 days")
+            
+            # Test 4: Verify data completeness for popup display
+            if len(date_filtered_logs) > 0:
+                sample_log = date_filtered_logs[0]
+                
+                # Verify all popup-required fields are present
+                popup_fields = [
+                    "id", "report_id", "factory_id", "date", "production_data",
+                    "sales_data", "downtime_hours", "downtime_reasons", 
+                    "stock_data", "created_by", "created_at"
+                ]
+                
+                for field in popup_fields:
+                    self.assertIn(field, sample_log)
+                    
+                # Calculate formatted values for popup display
+                total_production = sum(sample_log["production_data"].values())
+                total_sales_amount = sum(item["amount"] for item in sample_log["sales_data"].values())
+                total_revenue = sum(item["amount"] * item["unit_price"] for item in sample_log["sales_data"].values())
+                
+                print(f"✅ Sample log popup data:")
+                print(f"  - Report ID: {sample_log['report_id']}")
+                print(f"  - Total Production: {total_production:,.2f}")
+                print(f"  - Total Sales: {total_sales_amount:,.2f}")
+                print(f"  - Total Revenue: ${total_revenue:,.2f}")
+                print(f"  - Downtime: {sample_log['downtime_hours']} hours")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Daily logs filtering for chart clicks test failed: {str(e)}")
+
+    def test_37_daily_logs_numeric_formatting_for_popups(self):
+        """Test that numeric values are properly formatted for frontend popup display"""
+        if not self.factory_token:
+            self.skipTest("Factory token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.factory_token}"}
+        
+        # Create test data with large numbers that need comma formatting
+        today = datetime.utcnow()
+        test_date = today - timedelta(days=35)
+        
+        large_numbers_data = {
+            "factory_id": "wakene_food",
+            "date": test_date.isoformat(),
+            "production_data": {
+                "Flour": 1234567.89,
+                "Fruska (Wheat Bran)": 987654.32,
+                "Fruskelo (Wheat Germ)": 456789.01
+            },
+            "sales_data": {
+                "Flour": {"amount": 1000000.50, "unit_price": 75.25},
+                "Fruska (Wheat Bran)": {"amount": 750000.75, "unit_price": 45.50},
+                "Fruskelo (Wheat Germ)": {"amount": 500000.25, "unit_price": 65.75}
+            },
+            "downtime_hours": 12.5,
+            "downtime_reasons": [
+                {"reason": "Major Maintenance", "hours": 8.0},
+                {"reason": "Equipment Upgrade", "hours": 4.5}
+            ],
+            "stock_data": {
+                "Flour": 2500000.75,
+                "Fruska (Wheat Bran)": 1750000.50,
+                "Fruskelo (Wheat Germ)": 1250000.25
+            }
+        }
+        
+        try:
+            # Create test log with large numbers
+            response = requests.post(f"{self.base_url}/daily-logs", json=large_numbers_data, headers=headers)
+            if response.status_code == 400 and "already exists" in response.text:
+                large_numbers_data["date"] = (test_date - timedelta(days=1)).isoformat()
+                response = requests.post(f"{self.base_url}/daily-logs", json=large_numbers_data, headers=headers)
+                
+            self.assertEqual(response.status_code, 200)
+            created_log = response.json()
+            
+            # Get the log back to verify numeric precision
+            response = requests.get(f"{self.base_url}/daily-logs", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            logs = response.json()
+            
+            # Find our test log
+            test_log = None
+            for log in logs:
+                if log["id"] == created_log["id"]:
+                    test_log = log
+                    break
+                    
+            self.assertIsNotNone(test_log)
+            
+            # Verify numeric precision is maintained
+            self.assertEqual(test_log["production_data"]["Flour"], 1234567.89)
+            self.assertEqual(test_log["sales_data"]["Flour"]["unit_price"], 75.25)
+            self.assertEqual(test_log["downtime_hours"], 12.5)
+            
+            # Calculate values that would be displayed in popups with formatting
+            total_production = sum(test_log["production_data"].values())
+            total_sales_amount = sum(item["amount"] for item in test_log["sales_data"].values())
+            total_revenue = sum(item["amount"] * item["unit_price"] for item in test_log["sales_data"].values())
+            total_stock = sum(test_log["stock_data"].values())
+            
+            # Verify calculations are correct for popup display
+            expected_total_production = 1234567.89 + 987654.32 + 456789.01
+            expected_total_sales = 1000000.50 + 750000.75 + 500000.25
+            expected_total_revenue = (1000000.50 * 75.25) + (750000.75 * 45.50) + (500000.25 * 65.75)
+            expected_total_stock = 2500000.75 + 1750000.50 + 1250000.25
+            
+            self.assertAlmostEqual(total_production, expected_total_production, places=2)
+            self.assertAlmostEqual(total_sales_amount, expected_total_sales, places=2)
+            self.assertAlmostEqual(total_revenue, expected_total_revenue, places=2)
+            self.assertAlmostEqual(total_stock, expected_total_stock, places=2)
+            
+            print("✅ Numeric formatting verification for popups successful")
+            print(f"  - Total Production: {total_production:,.2f} (should display as {total_production:,.2f})")
+            print(f"  - Total Sales: {total_sales_amount:,.2f} (should display as {total_sales_amount:,.2f})")
+            print(f"  - Total Revenue: ${total_revenue:,.2f} (should display as ${total_revenue:,.2f})")
+            print(f"  - Total Stock: {total_stock:,.2f} (should display as {total_stock:,.2f})")
+            print(f"  - Downtime: {test_log['downtime_hours']} hours")
+            
+            # Test individual product revenue calculations for popup details
+            for product, sales_info in test_log["sales_data"].items():
+                product_revenue = sales_info["amount"] * sales_info["unit_price"]
+                print(f"  - {product}: {sales_info['amount']:,.2f} × ${sales_info['unit_price']:,.2f} = ${product_revenue:,.2f}")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Numeric formatting for popups test failed: {str(e)}")
+
+    def test_38_daily_logs_factory_information_for_popups(self):
+        """Test that daily-logs endpoint returns proper factory information for popup display"""
+        if not self.hq_token:
+            self.skipTest("HQ token not available, skipping test")
+            
+        headers = {"Authorization": f"Bearer {self.hq_token}"}
+        
+        try:
+            # Get all daily logs to verify factory information
+            response = requests.get(f"{self.base_url}/daily-logs", headers=headers)
+            self.assertEqual(response.status_code, 200)
+            logs = response.json()
+            
+            if len(logs) == 0:
+                print("ℹ️ No logs available for factory information testing")
+                return
+                
+            # Get factory configuration for reference
+            response = requests.get(f"{self.base_url}/factories")
+            self.assertEqual(response.status_code, 200)
+            factories = response.json()
+            
+            # Verify each log has proper factory information for popup display
+            factory_info_verified = {}
+            
+            for log in logs:
+                factory_id = log["factory_id"]
+                
+                # Verify factory_id exists in factory configuration
+                self.assertIn(factory_id, factories, f"Factory ID {factory_id} not found in factory configuration")
+                
+                factory_config = factories[factory_id]
+                
+                # Store factory information that would be used in popups
+                if factory_id not in factory_info_verified:
+                    factory_info_verified[factory_id] = {
+                        "name": factory_config["name"],
+                        "sku_unit": factory_config["sku_unit"],
+                        "products": factory_config["products"],
+                        "log_count": 0
+                    }
+                    
+                factory_info_verified[factory_id]["log_count"] += 1
+                
+                # Verify log products match factory products
+                for product in log["production_data"].keys():
+                    self.assertIn(product, factory_config["products"], 
+                                f"Product {product} not in {factory_config['name']} product list")
+                    
+                for product in log["sales_data"].keys():
+                    self.assertIn(product, factory_config["products"], 
+                                f"Sales product {product} not in {factory_config['name']} product list")
+                    
+                for product in log["stock_data"].keys():
+                    self.assertIn(product, factory_config["products"], 
+                                f"Stock product {product} not in {factory_config['name']} product list")
+            
+            print("✅ Factory information verification for popups successful")
+            print(f"  - Verified {len(logs)} logs across {len(factory_info_verified)} factories")
+            
+            for factory_id, info in factory_info_verified.items():
+                print(f"  - {info['name']} ({factory_id}):")
+                print(f"    - SKU Unit: {info['sku_unit']}")
+                print(f"    - Products: {len(info['products'])}")
+                print(f"    - Logs: {info['log_count']}")
+                
+            # Test specific factory filtering to ensure popup data is complete
+            for factory_id in factory_info_verified.keys():
+                response = requests.get(f"{self.base_url}/daily-logs?factory_id={factory_id}", headers=headers)
+                self.assertEqual(response.status_code, 200)
+                factory_logs = response.json()
+                
+                for log in factory_logs:
+                    self.assertEqual(log["factory_id"], factory_id)
+                    
+                    # Verify all required popup fields are present
+                    required_popup_fields = [
+                        "id", "report_id", "factory_id", "date", "production_data",
+                        "sales_data", "downtime_hours", "downtime_reasons",
+                        "stock_data", "created_by", "created_at"
+                    ]
+                    
+                    for field in required_popup_fields:
+                        self.assertIn(field, log, f"Missing popup field {field} in {factory_id} log")
+                        
+                print(f"✅ Factory {factory_id} popup data complete: {len(factory_logs)} logs verified")
+                
+        except Exception as e:
+            print(f"Response status: {response.status_code if 'response' in locals() else 'N/A'}")
+            print(f"Response content: {response.text if 'response' in locals() else 'N/A'}")
+            self.fail(f"❌ Factory information for popups test failed: {str(e)}")
+
+
 if __name__ == "__main__":
     # Run the tests in order
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
