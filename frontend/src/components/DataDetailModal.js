@@ -8,19 +8,19 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
     const formatNumber = (value) => parseFloat(value).toLocaleString();
 
     const renderDailyLogDetails = () => (
-        <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-blue-50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">📊 Production Data</h4>
+                    <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">📊 Production Data</h4>
                     <div className="space-y-1">
                         {Object.entries(data.production_data || {}).map(([product, quantity]) => (
-                            <div key={product} className="flex justify-between text-sm">
-                                <span className="text-gray-600">{product}:</span>
-                                <span className="font-medium">{formatNumber(quantity)} units</span>
+                            <div key={product} className="flex justify-between text-xs sm:text-sm">
+                                <span className="text-gray-600 truncate mr-2">{product}:</span>
+                                <span className="font-medium flex-shrink-0">{formatNumber(quantity)} units</span>
                             </div>
                         ))}
                         <div className="pt-2 border-t border-blue-200">
-                            <div className="flex justify-between font-semibold text-blue-800">
+                            <div className="flex justify-between font-semibold text-blue-800 text-xs sm:text-sm">
                                 <span>Total Production:</span>
                                 <span>{formatNumber(Object.values(data.production_data || {}).reduce((a, b) => a + b, 0))} units</span>
                             </div>
@@ -29,16 +29,16 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                 </div>
 
                 <div className="bg-yellow-50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-yellow-800 mb-2">💰 Sales Data</h4>
+                    <h4 className="font-semibold text-yellow-800 mb-2 text-sm sm:text-base">💰 Sales Data</h4>
                     <div className="space-y-1">
                         {Object.entries(data.sales_data || {}).map(([product, sales]) => {
                             const amount = typeof sales === 'object' ? sales.amount : sales;
                             const price = typeof sales === 'object' ? sales.unit_price : 0;
                             return (
-                                <div key={product} className="text-sm">
+                                <div key={product} className="text-xs sm:text-sm">
                                     <div className="flex justify-between">
-                                        <span className="text-gray-600">{product}:</span>
-                                        <span className="font-medium">{formatNumber(amount)} units</span>
+                                        <span className="text-gray-600 truncate mr-2">{product}:</span>
+                                        <span className="font-medium flex-shrink-0">{formatNumber(amount)} units</span>
                                     </div>
                                     {price > 0 && (
                                         <div className="flex justify-between text-xs text-gray-500 ml-2">
@@ -50,14 +50,14 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                             );
                         })}
                         <div className="pt-2 border-t border-yellow-200">
-                            <div className="flex justify-between font-semibold text-yellow-800">
+                            <div className="flex justify-between font-semibold text-yellow-800 text-xs sm:text-sm">
                                 <span>Total Sales:</span>
                                 <span>{formatNumber(Object.values(data.sales_data || {}).reduce((acc, sales) => {
                                     const amount = typeof sales === 'object' ? sales.amount : sales;
                                     return acc + amount;
                                 }, 0))} units</span>
                             </div>
-                            <div className="flex justify-between font-semibold text-yellow-800">
+                            <div className="flex justify-between font-semibold text-yellow-800 text-xs sm:text-sm">
                                 <span>Total Revenue:</span>
                                 <span>{formatCurrency(Object.values(data.sales_data || {}).reduce((acc, sales) => {
                                     if (typeof sales === 'object') {
@@ -71,22 +71,22 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="bg-red-50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-red-800 mb-2">⏱️ Downtime Information</h4>
+                    <h4 className="font-semibold text-red-800 mb-2 text-sm sm:text-base">⏱️ Downtime Information</h4>
                     <div className="space-y-2">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-xs sm:text-sm">
                             <span className="text-gray-600">Total Downtime:</span>
                             <span className="font-medium">{data.downtime_hours?.toFixed(2) || '0.00'} hours</span>
                         </div>
                         {data.downtime_reasons && data.downtime_reasons.length > 0 && (
                             <div>
-                                <span className="text-sm font-medium text-gray-700">Reasons:</span>
+                                <span className="text-xs sm:text-sm font-medium text-gray-700">Reasons:</span>
                                 <div className="mt-1 space-y-1">
                                     {data.downtime_reasons.map((reason, index) => (
-                                        <div key={index} className="flex justify-between text-sm bg-white p-2 rounded">
-                                            <span className="text-gray-600">{reason.reason}:</span>
-                                            <span className="font-medium">{reason.hours?.toFixed(2) || '0.00'} hrs</span>
+                                        <div key={index} className="flex justify-between text-xs sm:text-sm bg-white p-2 rounded">
+                                            <span className="text-gray-600 truncate mr-2">{reason.reason}:</span>
+                                            <span className="font-medium flex-shrink-0">{reason.hours?.toFixed(2) || '0.00'} hrs</span>
                                         </div>
                                     ))}
                                 </div>
@@ -96,16 +96,16 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
                 </div>
 
                 <div className="bg-green-50 p-3 rounded-lg">
-                    <h4 className="font-semibold text-green-800 mb-2">📦 Stock Data</h4>
+                    <h4 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">📦 Stock Data</h4>
                     <div className="space-y-1">
                         {Object.entries(data.stock_data || {}).map(([product, stock]) => (
-                            <div key={product} className="flex justify-between text-sm">
-                                <span className="text-gray-600">{product}:</span>
-                                <span className="font-medium">{formatNumber(stock)} units</span>
+                            <div key={product} className="flex justify-between text-xs sm:text-sm">
+                                <span className="text-gray-600 truncate mr-2">{product}:</span>
+                                <span className="font-medium flex-shrink-0">{formatNumber(stock)} units</span>
                             </div>
                         ))}
                         <div className="pt-2 border-t border-green-200">
-                            <div className="flex justify-between font-semibold text-green-800">
+                            <div className="flex justify-between font-semibold text-green-800 text-xs sm:text-sm">
                                 <span>Total Stock:</span>
                                 <span>{formatNumber(Object.values(data.stock_data || {}).reduce((a, b) => a + b, 0))} units</span>
                             </div>
@@ -115,25 +115,29 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
             </div>
 
             <div className="bg-gray-50 p-3 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-2">ℹ️ Log Information</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span className="text-gray-600">Report ID:</span>
-                        <span className="font-medium ml-2 font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                            {data.report_id || 'N/A'}
-                        </span>
+                <h4 className="font-semibold text-gray-800 mb-2 text-sm sm:text-base">ℹ️ Log Information</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
+                    <div className="space-y-2">
+                        <div>
+                            <span className="text-gray-600 block sm:inline">Report ID:</span>
+                            <span className="font-medium ml-0 sm:ml-2 font-mono text-blue-600 bg-blue-50 px-2 py-1 rounded block sm:inline mt-1 sm:mt-0">
+                                {data.report_id || 'N/A'}
+                            </span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600 block sm:inline">Date:</span>
+                            <span className="font-medium ml-0 sm:ml-2 block sm:inline">{new Date(data.date).toLocaleDateString()}</span>
+                        </div>
                     </div>
-                    <div>
-                        <span className="text-gray-600">Date:</span>
-                        <span className="font-medium ml-2">{new Date(data.date).toLocaleDateString()}</span>
-                    </div>
-                    <div>
-                        <span className="text-gray-600">Created by:</span>
-                        <span className="font-medium ml-2">{data.created_by}</span>
-                    </div>
-                    <div>
-                        <span className="text-gray-600">Factory:</span>
-                        <span className="font-medium ml-2">{data.factory_name || data.factory_id}</span>
+                    <div className="space-y-2">
+                        <div>
+                            <span className="text-gray-600 block sm:inline">Created by:</span>
+                            <span className="font-medium ml-0 sm:ml-2 block sm:inline">{data.created_by}</span>
+                        </div>
+                        <div>
+                            <span className="text-gray-600 block sm:inline">Factory:</span>
+                            <span className="font-medium ml-0 sm:ml-2 block sm:inline">{data.factory_name || data.factory_id}</span>
+                        </div>
                     </div>
                 </div>
             </div>
