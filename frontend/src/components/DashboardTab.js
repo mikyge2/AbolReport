@@ -571,14 +571,39 @@ const DashboardTab = () => {
 
     const downtimeBarChartOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false,
             },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                titleFont: {
+                    size: window.innerWidth < 640 ? 12 : 14
+                },
+                bodyFont: {
+                    size: window.innerWidth < 640 ? 11 : 13
+                }
+            }
         },
         scales: {
+            x: {
+                ticks: {
+                    font: {
+                        size: window.innerWidth < 640 ? 9 : 12
+                    },
+                    maxRotation: window.innerWidth < 640 ? 45 : 0
+                }
+            },
             y: {
                 beginAtZero: true,
+                ticks: {
+                    font: {
+                        size: window.innerWidth < 640 ? 9 : 12
+                    }
+                }
             },
         },
     };
