@@ -516,11 +516,23 @@ const DashboardTab = () => {
 
     const barChartOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: {
                 display: false,
             },
             tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                titleColor: 'white',
+                bodyColor: 'white',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderWidth: 1,
+                titleFont: {
+                    size: window.innerWidth < 640 ? 12 : 14
+                },
+                bodyFont: {
+                    size: window.innerWidth < 640 ? 11 : 13
+                },
                 callbacks: {
                     label: function (context) {
                         const dataset = context.dataset;
@@ -532,8 +544,27 @@ const DashboardTab = () => {
             }
         },
         scales: {
+            x: {
+                ticks: {
+                    font: {
+                        size: window.innerWidth < 640 ? 9 : 12
+                    },
+                    maxRotation: window.innerWidth < 640 ? 45 : 0
+                }
+            },
             y: {
                 beginAtZero: true,
+                ticks: {
+                    font: {
+                        size: window.innerWidth < 640 ? 9 : 12
+                    },
+                    callback: function(value) {
+                        if (window.innerWidth < 640) {
+                            return value > 1000 ? (value/1000).toFixed(1) + 'k' : value;
+                        }
+                        return value.toLocaleString();
+                    }
+                }
             },
         },
     };
