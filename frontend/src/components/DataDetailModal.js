@@ -145,39 +145,39 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
     );
 
     const renderChartDataDetails = () => (
-        <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">📊 Production</h4>
-                    <div className="text-2xl font-bold text-blue-900">{formatNumber(data.production)} units</div>
+        <div className="space-y-3 sm:space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                    <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">📊 Production</h4>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-900">{formatNumber(data.production)} units</div>
                     {data.production_breakdown && (
                         <div className="mt-2 space-y-1">
                             {Object.entries(data.production_breakdown).map(([product, quantity]) => (
-                                <div key={product} className="flex justify-between text-sm">
-                                    <span className="text-gray-600">{product}:</span>
-                                    <span>{formatNumber(quantity)}</span>
+                                <div key={product} className="flex justify-between text-xs sm:text-sm">
+                                    <span className="text-gray-600 truncate mr-2">{product}:</span>
+                                    <span className="flex-shrink-0">{formatNumber(quantity)}</span>
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
 
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-yellow-800 mb-2">💰 Sales</h4>
-                    <div className="text-2xl font-bold text-yellow-900">{formatNumber(data.sales)} units</div>
+                <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg">
+                    <h4 className="font-semibold text-yellow-800 mb-2 text-sm sm:text-base">💰 Sales</h4>
+                    <div className="text-xl sm:text-2xl font-bold text-yellow-900">{formatNumber(data.sales)} units</div>
                     {data.revenue && (
-                        <div className="text-lg font-semibold text-yellow-800 mt-1">
+                        <div className="text-base sm:text-lg font-semibold text-yellow-800 mt-1">
                             Revenue: {formatCurrency(data.revenue)}
                         </div>
                     )}
                 </div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-semibold text-gray-800 mb-2">📅 Date Information</h4>
-                <div className="text-lg font-medium">{data.date}</div>
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-800 mb-2 text-sm sm:text-base">📅 Date Information</h4>
+                <div className="text-base sm:text-lg font-medium">{data.date}</div>
                 {data.factory_name && (
-                    <div className="text-sm text-gray-600 mt-1">Factory: {data.factory_name}</div>
+                    <div className="text-xs sm:text-sm text-gray-600 mt-1">Factory: {data.factory_name}</div>
                 )}
             </div>
         </div>
