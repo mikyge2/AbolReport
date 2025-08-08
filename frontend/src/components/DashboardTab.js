@@ -647,25 +647,25 @@ const DashboardTab = () => {
     const factoriesToDisplay = getFactoriesDataToDisplay();
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-8">
             {/* Header */}
-            <div className="glass-card p-6">
-                <div className="flex items-center justify-between">
+            <div className="glass-card-enhanced-contrast p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
                     <div>
-                        <h1 className="text-2xl font-bold text-futuristic-primary">Factory Dashboard</h1>
-                        <p className="text-futuristic-secondary mt-1">
+                        <h1 className="text-xl sm:text-2xl font-bold text-high-contrast-light">Factory Dashboard</h1>
+                        <p className="text-futuristic-secondary mt-1 text-sm sm:text-base">
                             {user?.role === 'headquarters' 
                                 ? 'Overview of all factory operations' 
                                 : 'Your factory performance overview'
                             }
                         </p>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        <span className="text-sm text-futuristic-muted">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 text-xs sm:text-sm">
+                        <span className="text-futuristic-secondary">
                             Role: <span className="font-medium text-[#ffc72c]">{user?.role}</span>
                         </span>
                         {user?.factory_id && (
-                            <span className="text-sm text-futuristic-muted">
+                            <span className="text-futuristic-secondary">
                                 Factory: <span className="font-medium text-[#ffc72c]">{user.factory_id}</span>
                             </span>
                         )}
@@ -674,19 +674,19 @@ const DashboardTab = () => {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div className="stat-card-futuristic">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-red-500/20">
-                                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-red-500/20 to-red-600/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-red-500/20">
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
-                        <div className="ml-4">
-                            <p className="text-sm text-futuristic-muted">Total Downtime</p>
-                            <p className="text-2xl font-bold text-red-400">
+                        <div className="ml-3 sm:ml-4">
+                            <p className="text-xs sm:text-sm text-futuristic-secondary font-semibold">Total Downtime</p>
+                            <p className="text-xl sm:text-2xl font-bold text-red-400">
                                 {dashboardData?.total_downtime?.toFixed(2) || '0.00'}h
                             </p>
                         </div>
@@ -696,33 +696,33 @@ const DashboardTab = () => {
                 <div className="stat-card-futuristic">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-blue-500/20">
-                                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-blue-500/20">
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                             </div>
                         </div>
-                        <div className="ml-4">
-                            <p className="text-sm text-futuristic-muted">Active Factories</p>
-                            <p className="text-2xl font-bold text-blue-400">
+                        <div className="ml-3 sm:ml-4">
+                            <p className="text-xs sm:text-sm text-futuristic-secondary font-semibold">Active Factories</p>
+                            <p className="text-xl sm:text-2xl font-bold text-blue-400">
                                 {Object.keys(factoriesToDisplay).length}
                             </p>
                         </div>
                     </div>
                 </div>
                 
-                <div className="stat-card-futuristic">
+                <div className="stat-card-futuristic sm:col-span-2 lg:col-span-1">
                     <div className="flex items-center">
                         <div className="flex-shrink-0">
-                            <div className="w-12 h-12 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-green-500/20">
-                                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500/20 to-green-600/20 rounded-xl flex items-center justify-center backdrop-blur-sm border border-green-500/20">
+                                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
                             </div>
                         </div>
-                        <div className="ml-4">
-                            <p className="text-sm text-futuristic-muted">Total Stock</p>
-                            <p className="text-2xl font-bold text-green-400">
+                        <div className="ml-3 sm:ml-4">
+                            <p className="text-xs sm:text-sm text-futuristic-secondary font-semibold">Total Stock</p>
+                            <p className="text-xl sm:text-2xl font-bold text-green-400">
                                 {dashboardData?.total_stock?.toLocaleString() || 0}
                             </p>
                         </div>
@@ -731,10 +731,10 @@ const DashboardTab = () => {
             </div>
 
             {/* Export Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-center sm:justify-end">
                 <button
                     onClick={exportToExcel}
-                    className="btn-futuristic flex items-center space-x-2"
+                    className="btn-futuristic flex items-center justify-center space-x-2 w-full sm:w-auto"
                 >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
