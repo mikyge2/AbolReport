@@ -247,7 +247,7 @@ const DashboardTab = () => {
         return chartData;
     };
 
-    // Enhanced line chart options for daily trends
+    // Enhanced line chart options for daily trends with mobile optimization
     const createChartOptionsWithFactory = (factoryId) => ({
         responsive: true,
         maintainAspectRatio: false,
@@ -258,25 +258,32 @@ const DashboardTab = () => {
         plugins: {
             legend: {
                 display: true,
-                position: 'top',
+                position: window.innerWidth < 640 ? 'bottom' : 'top',
                 labels: {
                     usePointStyle: true,
-                    padding: 20,
+                    padding: window.innerWidth < 640 ? 10 : 20,
                     font: {
-                        size: 14,
+                        size: window.innerWidth < 640 ? 10 : 14,
                         weight: 'bold'
-                    }
+                    },
+                    boxWidth: window.innerWidth < 640 ? 15 : 20
                 }
             },
             tooltip: {
                 mode: 'index',
                 intersect: false,
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                backgroundColor: 'rgba(0, 0, 0, 0.9)',
                 titleColor: 'white',
                 bodyColor: 'white',
                 borderColor: 'rgba(255, 255, 255, 0.1)',
                 borderWidth: 1,
-                padding: 10,
+                padding: window.innerWidth < 640 ? 8 : 10,
+                titleFont: {
+                    size: window.innerWidth < 640 ? 12 : 14
+                },
+                bodyFont: {
+                    size: window.innerWidth < 640 ? 11 : 13
+                },
                 callbacks: {
                     label: function (context) {
                         const dataset = context.dataset;
@@ -290,31 +297,33 @@ const DashboardTab = () => {
             x: {
                 display: true,
                 title: {
-                    display: true,
+                    display: window.innerWidth > 640,
                     text: 'Date',
                     font: {
-                        size: 14,
+                        size: window.innerWidth < 640 ? 10 : 14,
                         weight: 'bold'
                     }
                 },
                 grid: {
-                    display: true,
+                    display: window.innerWidth > 640,
                     color: 'rgba(0, 0, 0, 0.1)'
                 },
                 ticks: {
                     font: {
-                        size: 12
-                    }
+                        size: window.innerWidth < 640 ? 9 : 12
+                    },
+                    maxTicksLimit: window.innerWidth < 640 ? 5 : 10,
+                    maxRotation: window.innerWidth < 640 ? 45 : 0
                 }
             },
             y: {
                 display: true,
                 beginAtZero: true,
                 title: {
-                    display: true,
+                    display: window.innerWidth > 640,
                     text: 'Units',
                     font: {
-                        size: 14,
+                        size: window.innerWidth < 640 ? 10 : 14,
                         weight: 'bold'
                     }
                 },
@@ -324,18 +333,24 @@ const DashboardTab = () => {
                 },
                 ticks: {
                     font: {
-                        size: 12
+                        size: window.innerWidth < 640 ? 9 : 12
+                    },
+                    callback: function(value) {
+                        if (window.innerWidth < 640) {
+                            return value > 1000 ? (value/1000).toFixed(1) + 'k' : value;
+                        }
+                        return value.toLocaleString();
                     }
                 }
             },
         },
         elements: {
             line: {
-                borderWidth: 3
+                borderWidth: window.innerWidth < 640 ? 2 : 3
             },
             point: {
-                radius: 5,
-                hoverRadius: 7
+                radius: window.innerWidth < 640 ? 3 : 5,
+                hoverRadius: window.innerWidth < 640 ? 5 : 7
             }
         },
         onClick: (event, elements, chart) => {
