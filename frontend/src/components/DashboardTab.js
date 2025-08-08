@@ -745,41 +745,72 @@ const DashboardTab = () => {
 
             {/* Headquarters-only comparison charts - MOVED TO TOP */}
             {user?.role === 'headquarters' && Object.keys(comparisonData || {}).length > 0 && (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                     <div className="chart-container-futuristic">
-                        <h2 className="text-xl font-bold text-futuristic-primary mb-6">
+                        <h2 className="text-lg sm:text-xl font-bold text-high-contrast-light mb-4 sm:mb-6">
                             Factory Comparison Analytics - Today ({new Date().toLocaleDateString()})
                         </h2>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="glass-card-light p-6">
-                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Production Comparison</h3>
-                                <Bar data={factoryProductionData} options={barChartOptions} />
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            <div className="glass-card-light p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800">Production Comparison</h3>
+                                <div className="h-48 sm:h-64">
+                                    <Bar data={factoryProductionData} options={barChartOptions} />
+                                </div>
                             </div>
-                            <div className="glass-card-light p-6">
-                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Sales Comparison</h3>
-                                <Bar data={factorySalesData} options={barChartOptions} />
+                            <div className="glass-card-light p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800">Sales Comparison</h3>
+                                <div className="h-48 sm:h-64">
+                                    <Bar data={factorySalesData} options={barChartOptions} />
+                                </div>
                             </div>
-                            <div className="glass-card-light p-6">
-                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Downtime Comparison</h3>
-                                <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
+                            <div className="glass-card-light p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800">Downtime Comparison</h3>
+                                <div className="h-48 sm:h-64">
+                                    <Bar data={factoryDowntimeData} options={downtimeBarChartOptions} />
+                                </div>
                             </div>
-                            <div className="glass-card-light p-6">
-                                <h3 className="text-lg font-semibold mb-4 text-gray-800">Factory Efficiency</h3>
-                                <Doughnut
-                                    data={efficiencyData}
-                                    options={{
-                                        responsive: true,
-                                        plugins: {
-                                            legend: { position: 'bottom' },
-                                        },
-                                    }}
-                                />
+                            <div className="glass-card-light p-4 sm:p-6">
+                                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-gray-800">Factory Efficiency</h3>
+                                <div className="h-48 sm:h-64 flex items-center justify-center">
+                                    <div className="w-full max-w-xs">
+                                        <Doughnut
+                                            data={efficiencyData}
+                                            options={{
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: {
+                                                    legend: { 
+                                                        position: 'bottom',
+                                                        labels: {
+                                                            font: {
+                                                                size: window.innerWidth < 640 ? 10 : 12
+                                                            },
+                                                            padding: window.innerWidth < 640 ? 10 : 15,
+                                                            usePointStyle: true
+                                                        }
+                                                    },
+                                                    tooltip: {
+                                                        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                                        titleColor: 'white',
+                                                        bodyColor: 'white',
+                                                        titleFont: {
+                                                            size: window.innerWidth < 640 ? 12 : 14
+                                                        },
+                                                        bodyFont: {
+                                                            size: window.innerWidth < 640 ? 11 : 13
+                                                        }
+                                                    }
+                                                },
+                                            }}
+                                        />
+                                    </div>
+                                </div>
                                 {/* Factory Efficiency Explanation */}
-                                <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
-                                    <p className="text-sm text-gray-700">
+                                <div className="mt-3 sm:mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+                                    <p className="text-xs sm:text-sm text-gray-700">
                                         <strong>Factory Efficiency:</strong> Calculated as the ratio of productive time to total available time. 
                                         Higher efficiency indicates better utilization of resources and minimal downtime. 
-                                        Formula: ((Total Hours - Downtime Hours) / Total Hours) × 100%
+                                        <span className="hidden sm:inline">Formula: ((Total Hours - Downtime Hours) / Total Hours) × 100%</span>
                                     </p>
                                 </div>
                             </div>
