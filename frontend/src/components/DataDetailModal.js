@@ -180,35 +180,42 @@ const DataDetailModal = ({ isOpen, onClose, data, type }) => {
     );
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-                    <h3 className="text-xl font-bold text-gray-800">
-                        {type === 'daily_log' ? '📋 Daily Production Report Details' : '📊 Chart Data Point Details'}
-                    </h3>
-                    {data?.report_id && (
-                        <span className="font-mono text-sm text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
-                            {data.report_id}
-                        </span>
-                    )}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg w-full max-w-xs sm:max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto modal-content-mobile">
+                <div className="sticky top-0 bg-white border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
+                    <div className="flex-1 mr-3">
+                        <h3 className="text-base sm:text-xl font-bold text-gray-800">
+                            <span className="hidden sm:inline">
+                                {type === 'daily_log' ? '📋 Daily Production Report Details' : '📊 Chart Data Point Details'}
+                            </span>
+                            <span className="sm:hidden">
+                                {type === 'daily_log' ? '📋 Report Details' : '📊 Data Details'}
+                            </span>
+                        </h3>
+                        {data?.report_id && (
+                            <span className="font-mono text-xs sm:text-sm text-blue-600 bg-blue-50 px-2 sm:px-3 py-1 rounded-full mt-1 inline-block">
+                                {data.report_id}
+                            </span>
+                        )}
+                    </div>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors ml-4"
+                        className="text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 p-1"
                     >
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-3 sm:p-6">
                     {type === 'daily_log' ? renderDailyLogDetails() : renderChartDataDetails()}
                 </div>
 
-                <div className="sticky bottom-0 bg-gray-50 px-6 py-3 border-t border-gray-200">
+                <div className="sticky bottom-0 bg-gray-50 px-3 sm:px-6 py-3 border-t border-gray-200">
                     <button
                         onClick={onClose}
-                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base touch-friendly"
                     >
                         Close Details
                     </button>
