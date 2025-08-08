@@ -820,23 +820,24 @@ const DashboardTab = () => {
             )}
 
             {/* Production vs Sales Charts - Separate chart for each factory */}
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
                 <div className="chart-container-futuristic">
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-futuristic-primary">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
+                        <h2 className="text-lg sm:text-xl font-bold text-high-contrast-light">
                             📊 {user?.role === 'headquarters' ? 'All Factories Overview' : 'Factory Performance'} - Production vs Sales Trends (30-Day Period)
                         </h2>
                     </div>
                     
                     {/* Interactive Tip */}
-                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded">
-                        <p className="text-sm text-yellow-800">
-                            💡 <strong>Interactive Charts:</strong> Click on any data point in the charts below to view detailed production information for that specific date.
+                    <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4 sm:mb-6 rounded">
+                        <p className="text-xs sm:text-sm text-yellow-800">
+                            💡 <strong>Interactive Charts:</strong> <span className="hidden sm:inline">Click on any data point in the charts below to view detailed production information for that specific date.</span>
+                            <span className="sm:hidden">Tap chart points for details.</span>
                         </p>
                     </div>
                     
                     {Object.keys(factoriesToDisplay).length > 0 ? (
-                        <div className="grid grid-cols-1 gap-8">
+                        <div className="grid grid-cols-1 gap-6 sm:gap-8">
                             {/* Show graphs for specific factories based on role */}
                             {user?.role === 'headquarters' ? (
                                 // For headquarters - show all 4 factories
@@ -849,25 +850,25 @@ const DashboardTab = () => {
                                         const capData = createMintuPlastSeparateData(factoryData, 'cap');
                                         
                                         return (
-                                            <div key={`daily-trend-${factoryId}`} className="space-y-6">
+                                            <div key={`daily-trend-${factoryId}`} className="space-y-4 sm:space-y-6">
                                                 {/* Preform Chart */}
-                                                <div className="glass-card-light p-6">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h3 className="text-lg font-semibold text-gray-800">
+                                                <div className="glass-card-light p-4 sm:p-6">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                                                        <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                                                             🏭 Mintu Plast - Preform Products Performance
                                                         </h3>
-                                                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                        <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-600">
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-[#1a355b] rounded-full mr-2"></div>
+                                                                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#1a355b] rounded-full mr-1 sm:mr-2"></div>
                                                                 <span>Production</span>
                                                             </div>
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-[#ffc72c] rounded-full mr-2"></div>
+                                                                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#ffc72c] rounded-full mr-1 sm:mr-2"></div>
                                                                 <span>Sales</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="h-96 w-full">
+                                                    <div className="h-64 sm:h-96 w-full">
                                                         <Line
                                                             data={createFactoryProductionVsSalesChart(preformData, preformData.name)}
                                                             options={createChartOptionsWithFactory('mintu_plast')}
@@ -875,30 +876,30 @@ const DashboardTab = () => {
                                                     </div>
                                                     
                                                     {/* Preform Summary Stats */}
-                                                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                                                    <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Total Production</p>
-                                                            <p className="text-lg font-semibold text-[#1a355b]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Total Production</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#1a355b]">
                                                                 {preformData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Total Sales</p>
-                                                            <p className="text-lg font-semibold text-[#ffc72c]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Total Sales</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#ffc72c]">
                                                                 {preformData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                            <p className="text-lg font-semibold text-[#1a355b]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Avg Daily Production</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#1a355b]">
                                                                 {preformData?.production?.length > 0 
                                                                     ? Math.round(preformData.production.reduce((a, b) => a + b, 0) / preformData.production.length).toLocaleString()
                                                                     : 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                            <p className="text-lg font-semibold text-[#ffc72c]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Avg Daily Sales</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#ffc72c]">
                                                                 {preformData?.sales?.length > 0 
                                                                     ? Math.round(preformData.sales.reduce((a, b) => a + b, 0) / preformData.sales.length).toLocaleString()
                                                                     : 0}
@@ -908,23 +909,23 @@ const DashboardTab = () => {
                                                 </div>
                                                 
                                                 {/* Cap Chart */}
-                                                <div className="glass-card-light p-6">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h3 className="text-lg font-semibold text-gray-800">
+                                                <div className="glass-card-light p-4 sm:p-6">
+                                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                                                        <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                                                             🧴 Mintu Plast - Cap Products Performance
                                                         </h3>
-                                                        <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                        <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-600">
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-[#1a355b] rounded-full mr-2"></div>
+                                                                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#1a355b] rounded-full mr-1 sm:mr-2"></div>
                                                                 <span>Production</span>
                                                             </div>
                                                             <div className="flex items-center">
-                                                                <div className="w-4 h-4 bg-[#ffc72c] rounded-full mr-2"></div>
+                                                                <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#ffc72c] rounded-full mr-1 sm:mr-2"></div>
                                                                 <span>Sales</span>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="h-96 w-full">
+                                                    <div className="h-64 sm:h-96 w-full">
                                                         <Line
                                                             data={createFactoryProductionVsSalesChart(capData, capData.name)}
                                                             options={createChartOptionsWithFactory('mintu_plast')}
@@ -932,30 +933,30 @@ const DashboardTab = () => {
                                                     </div>
                                                     
                                                     {/* Cap Summary Stats */}
-                                                    <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                                                    <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Total Production</p>
-                                                            <p className="text-lg font-semibold text-[#1a355b]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Total Production</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#1a355b]">
                                                                 {capData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Total Sales</p>
-                                                            <p className="text-lg font-semibold text-[#ffc72c]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Total Sales</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#ffc72c]">
                                                                 {capData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                            <p className="text-lg font-semibold text-[#1a355b]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Avg Daily Production</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#1a355b]">
                                                                 {capData?.production?.length > 0 
                                                                     ? Math.round(capData.production.reduce((a, b) => a + b, 0) / capData.production.length).toLocaleString()
                                                                     : 0}
                                                             </p>
                                                         </div>
                                                         <div className="text-center">
-                                                            <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                            <p className="text-lg font-semibold text-[#ffc72c]">
+                                                            <p className="text-xs sm:text-sm text-gray-500">Avg Daily Sales</p>
+                                                            <p className="text-sm sm:text-lg font-semibold text-[#ffc72c]">
                                                                 {capData?.sales?.length > 0 
                                                                     ? Math.round(capData.sales.reduce((a, b) => a + b, 0) / capData.sales.length).toLocaleString()
                                                                     : 0}
@@ -968,23 +969,23 @@ const DashboardTab = () => {
                                     } else {
                                         // Regular chart for other factories
                                         return (
-                                            <div key={`daily-trend-${factoryId}`} className="glass-card-light p-6">
-                                                <div className="flex items-center justify-between mb-4">
-                                                    <h3 className="text-lg font-semibold text-gray-800">
+                                            <div key={`daily-trend-${factoryId}`} className="glass-card-light p-4 sm:p-6">
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4 space-y-2 sm:space-y-0">
+                                                    <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                                                         {factoryData.name || `Factory ${factoryId}`}
                                                     </h3>
-                                                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                                                    <div className="flex items-center space-x-3 sm:space-x-4 text-xs sm:text-sm text-gray-600">
                                                         <div className="flex items-center">
-                                                            <div className="w-4 h-4 bg-[#1a355b] rounded-full mr-2"></div>
+                                                            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#1a355b] rounded-full mr-1 sm:mr-2"></div>
                                                             <span>Production</span>
                                                         </div>
                                                         <div className="flex items-center">
-                                                            <div className="w-4 h-4 bg-[#ffc72c] rounded-full mr-2"></div>
+                                                            <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#ffc72c] rounded-full mr-1 sm:mr-2"></div>
                                                             <span>Sales</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="h-96 w-full">
+                                                <div className="h-64 sm:h-96 w-full">
                                                     <Line
                                                         data={createFactoryProductionVsSalesChart(factoryData, factoryData.name || `Factory ${factoryId}`)}
                                                         options={createChartOptionsWithFactory(factoryId)}
@@ -992,30 +993,30 @@ const DashboardTab = () => {
                                                 </div>
                                                 
                                                 {/* Factory Summary Stats */}
-                                                <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+                                                <div className="mt-4 sm:mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
                                                     <div className="text-center">
-                                                        <p className="text-sm text-gray-500">Total Production</p>
-                                                        <p className="text-lg font-semibold text-[#1a355b]">
+                                                        <p className="text-xs sm:text-sm text-gray-500">Total Production</p>
+                                                        <p className="text-sm sm:text-lg font-semibold text-[#1a355b]">
                                                             {factoryData?.production?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-sm text-gray-500">Total Sales</p>
-                                                        <p className="text-lg font-semibold text-[#ffc72c]">
+                                                        <p className="text-xs sm:text-sm text-gray-500">Total Sales</p>
+                                                        <p className="text-sm sm:text-lg font-semibold text-[#ffc72c]">
                                                             {factoryData?.sales?.reduce((a, b) => a + b, 0)?.toLocaleString() || 0}
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-sm text-gray-500">Avg Daily Production</p>
-                                                        <p className="text-lg font-semibold text-[#1a355b]">
+                                                        <p className="text-xs sm:text-sm text-gray-500">Avg Daily Production</p>
+                                                        <p className="text-sm sm:text-lg font-semibold text-[#1a355b]">
                                                             {factoryData?.production?.length > 0 
                                                                 ? Math.round(factoryData.production.reduce((a, b) => a + b, 0) / factoryData.production.length).toLocaleString()
                                                                 : 0}
                                                         </p>
                                                     </div>
                                                     <div className="text-center">
-                                                        <p className="text-sm text-gray-500">Avg Daily Sales</p>
-                                                        <p className="text-lg font-semibold text-[#ffc72c]">
+                                                        <p className="text-xs sm:text-sm text-gray-500">Avg Daily Sales</p>
+                                                        <p className="text-sm sm:text-lg font-semibold text-[#ffc72c]">
                                                             {factoryData?.sales?.length > 0 
                                                                 ? Math.round(factoryData.sales.reduce((a, b) => a + b, 0) / factoryData.sales.length).toLocaleString()
                                                                 : 0}
@@ -1024,7 +1025,7 @@ const DashboardTab = () => {
                                                 </div>
                                                 
                                                 {/* Debug info (can be removed in production) */}
-                                                <div className="mt-4 text-xs text-gray-400">
+                                                <div className="mt-4 text-xxs sm:text-xs text-gray-400 desktop-only">
                                                     <p>Data points: {factoryData?.dates?.length || 0} days</p>
                                                     <p>Production data: {factoryData?.production?.length || 0} points</p>
                                                     <p>Sales data: {factoryData?.sales?.length || 0} points</p>
