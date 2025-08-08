@@ -388,30 +388,241 @@ body {
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 768px) {
+/* Enhanced Mobile Responsive Adjustments */
+
+/* Small screens (mobile) */
+@media (max-width: 640px) {
   .mobile-padding {
-    padding: 1rem;
+    padding: 0.75rem;
   }
   
   .mobile-text {
     font-size: 0.875rem;
+    line-height: 1.5;
   }
   
   .glass-card, .glass-card-light {
     border-radius: 12px;
-    padding: 16px;
+    padding: 12px;
+    margin-bottom: 1rem;
   }
   
   .nav-tab {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: auto;
+    flex: 1;
+    text-align: center;
+  }
+  
+  .btn-futuristic {
     padding: 8px 16px;
-    font-size: 14px;
+    font-size: 13px;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Mobile-specific stat cards */
+  .stat-card-futuristic {
+    padding: 16px;
+    text-align: center;
+  }
+  
+  .stat-card-futuristic .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  /* Mobile chart containers */
+  .chart-container-futuristic {
+    padding: 16px;
+    margin-bottom: 1rem;
+  }
+  
+  /* Mobile modal adjustments */
+  .modal-content-mobile {
+    margin: 0.5rem;
+    max-height: 95vh;
+    border-radius: 12px;
+  }
+  
+  /* Mobile table wrapper */
+  .table-mobile-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Mobile form elements */
+  .form-mobile {
+    margin-bottom: 1rem;
+  }
+  
+  .form-mobile input, .form-mobile select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px;
+    border-radius: 8px;
+  }
+  
+  /* Mobile navigation improvements */
+  .nav-mobile-wrapper {
+    padding: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Mobile text improvements */
+  .text-futuristic-primary {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+  
+  .text-futuristic-secondary {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  
+  /* Mobile grid adjustments */
+  .mobile-grid-1 {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  /* Hide less important elements on mobile */
+  .desktop-only {
+    display: none;
+  }
+  
+  /* Mobile-friendly hover states (use active for touch) */
+  .touch-friendly:active {
+    transform: translateY(1px);
+    opacity: 0.9;
+  }
+}
+
+/* Medium screens (tablet) */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .glass-card, .glass-card-light {
+    border-radius: 14px;
+    padding: 20px;
+  }
+  
+  .nav-tab {
+    padding: 10px 18px;
+    font-size: 13px;
   }
   
   .btn-futuristic {
     padding: 10px 20px;
     font-size: 14px;
   }
+  
+  .chart-container-futuristic {
+    padding: 24px;
+  }
+  
+  .tablet-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* Large screens (desktop) - maintain existing styles */
+@media (min-width: 1025px) {
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Mobile-specific chart styles */
+@media (max-width: 640px) {
+  .chart-mobile {
+    height: 250px !important;
+    width: 100% !important;
+  }
+  
+  .chart-mobile canvas {
+    max-height: 250px !important;
+  }
+  
+  /* Doughnut charts on mobile */
+  .doughnut-mobile {
+    height: 200px !important;
+    margin: 0 auto;
+  }
+  
+  /* Bar charts on mobile */
+  .bar-mobile {
+    height: 200px !important;
+  }
+}
+
+/* Mobile table styles */
+@media (max-width: 640px) {
+  .table-mobile {
+    font-size: 0.75rem;
+  }
+  
+  .table-mobile th,
+  .table-mobile td {
+    padding: 8px 6px;
+    white-space: nowrap;
+  }
+  
+  .table-mobile th {
+    background-color: #f8fafc;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  /* Alternative mobile table - card layout */
+  .table-card-mobile {
+    display: none;
+  }
+  
+  .table-card-mobile .card-row {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-left: 4px solid #1a355b;
+  }
+  
+  .table-card-mobile .card-row:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+  }
+}
+
+/* Enhanced text contrast for better visibility */
+.text-high-contrast {
+  color: #1a355b !important;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.text-high-contrast-light {
+  color: #ffffff !important;
+  font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Better contrast for futuristic theme */
+.glass-card-enhanced-contrast {
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 199, 44, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.glass-card-enhanced-contrast .text-futuristic-secondary {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.glass-card-enhanced-contrast .text-futuristic-muted {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* Loading spinner */
