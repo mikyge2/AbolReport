@@ -84,24 +84,26 @@ const Dashboard = () => {
       </div>
 
       <nav className="futuristic-nav sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-[#1a355b] to-[#ffc72c] rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-[#1a355b] to-[#ffc72c] rounded-lg flex items-center justify-center">
+                <svg className="w-3 h-3 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <h1 className="text-xl font-bold text-futuristic-primary">Factory Portal</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-futuristic-primary">Factory Portal</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-futuristic-secondary">Welcome, {user?.username}</span>
-              <span className="text-xs bg-gradient-to-r from-[#ffc72c] to-[#1a355b] text-white px-3 py-1 rounded-full font-medium">
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="hidden sm:block">
+                <span className="text-xs sm:text-sm text-futuristic-secondary">Welcome, {user?.username}</span>
+              </div>
+              <span className="text-xxs sm:text-xs bg-gradient-to-r from-[#ffc72c] to-[#1a355b] text-white px-2 py-1 sm:px-3 sm:py-1 rounded-full font-medium">
                 {user?.role === 'headquarters' ? 'HQ' : 'Factory'}
               </span>
               <button
                 onClick={logout}
-                className="text-sm text-futuristic-muted hover:text-[#ffc72c] transition-colors duration-200"
+                className="text-xs sm:text-sm text-futuristic-muted hover:text-[#ffc72c] transition-colors duration-200 px-2 py-1"
               >
                 Logout
               </button>
@@ -110,19 +112,19 @@ const Dashboard = () => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <nav className="flex space-x-2 backdrop-blur-lg bg-white/5 rounded-2xl p-2 border border-white/10">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-8">
+          <nav className="flex space-x-1 sm:space-x-2 backdrop-blur-lg bg-white/5 rounded-2xl p-1 sm:p-2 border border-white/10 nav-mobile-wrapper">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+                className={`nav-tab ${activeTab === tab.id ? 'active' : ''} touch-friendly`}
                 disabled={isTabLoading}
               >
-                {tab.label}
+                <span className="block sm:inline">{tab.label}</span>
                 {isTabLoading && activeTab === tab.id && (
-                  <span className="ml-2 inline-block w-3 h-3 border border-[#ffc72c] border-t-transparent rounded-full animate-spin"></span>
+                  <span className="ml-1 sm:ml-2 inline-block w-3 h-3 border border-[#ffc72c] border-t-transparent rounded-full animate-spin"></span>
                 )}
               </button>
             ))}
