@@ -742,7 +742,7 @@ async def export_excel_report(
                     "Factory": factory_info["name"],
                     "Total Production": f"{total_production:,.2f}",
                     "Total Sales": f"{total_sales:,.2f}",
-                    "Total Revenue": f"${total_revenue:,.2f}",
+                    "Total Revenue": f"ETB {total_revenue:,.2f}",
                     "Total Downtime (Hours)": f"{total_downtime:.1f}",
                     "Average Stock": f"{avg_stock:,.2f}",
                     "Number of Records": len(factory_logs)
