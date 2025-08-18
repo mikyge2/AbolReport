@@ -335,7 +335,7 @@ const ReportsTab = () => {
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-sm font-medium text-gray-700">Revenue:</span>
-                                                <span className="text-sm text-[#ffc72c] font-semibold">${revenue.toFixed(2)}</span>
+                                                <span className="text-sm text-[#ffc72c] font-semibold">ETB {revenue.toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span className="text-sm font-medium text-gray-700">Downtime:</span>
