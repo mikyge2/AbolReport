@@ -22,13 +22,15 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
+  }, []);
 
-    // Set up axios interceptor for handling 401 errors - only for authenticated users
+  useEffect(() => {
+    // Set up axios interceptor for handling 401 errors - only for authenticated users  
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
         // Only show session timeout modal for 401 errors when user is actually logged in
-        if (error.response?.status === 401 && user && token && !window.location.pathname.includes('/login')) {
+        if (error.response?.status === 401 && user && token) {
           setShowSessionModal(true);
         }
         return Promise.reject(error);
