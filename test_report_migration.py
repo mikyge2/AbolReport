@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 
 # Configuration
-BASE_URL = "https://factory-graph-detail.preview.emergentagent.com/api"
+BASE_URL = "https://empty-export-debug.preview.emergentagent.com/api"
 
 def login_hq_user():
     """Login as headquarters user"""
