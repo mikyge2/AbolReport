@@ -10,7 +10,6 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isRegistering, setIsRegistering] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = async (e) => {
@@ -24,31 +23,6 @@ const Login = () => {
         const success = await login(username, password);
         if (!success) {
             setError('Invalid username or password');
-        }
-        setIsLoading(false);
-    };
-
-    const handleRegister = async (e) => {
-        e.preventDefault();
-        setError('');
-        setIsLoading(true);
-
-        const role = 'headquarters';
-
-        try {
-            await axios.post(`${API}/register`, {
-                username,
-                email: `${username}@company.com`,
-                password,
-                role
-            });
-
-            const success = await login(username, password);
-            if (!success) {
-                setError('Registration successful but login failed');
-            }
-        } catch (error) {
-            setError('Registration failed: ' + (error.response?.data?.detail || 'Unknown error'));
         }
         setIsLoading(false);
     };
@@ -102,7 +76,7 @@ const Login = () => {
                     )}
 
                     {/* Form */}
-                    <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-6">
+                    <form onSubmit={handleLogin} className="space-y-6">
                         {/* Username field */}
                         <div className="relative">
                             <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
@@ -163,7 +137,7 @@ const Login = () => {
                                     </>
                                 ) : (
                                     <>
-                                        {isRegistering ? 'Create Account' : 'Sign In'}
+                                        Sign In
                                         <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                         </svg>
@@ -172,27 +146,6 @@ const Login = () => {
                             </div>
                         </button>
                     </form>
-
-                    {/* Toggle register/login */}
-                    <div className="mt-8 text-center">
-                        <button
-                            onClick={() => setIsRegistering(!isRegistering)}
-                            className="text-[#ffc72c] hover:text-[#ffc72c]/80 font-medium transition-colors duration-300 underline decoration-dotted underline-offset-4"
-                        >
-                            {isRegistering ? 'Already have an account? Sign In' : 'Need an account? Create One'}
-                        </button>
-                    </div>
-
-                    {/* Demo credentials */}
-                    <div className="mt-8 text-center">
-                        <div className="bg-[#1a355b]/20 border border-[#1a355b]/30 rounded-xl p-4 backdrop-blur-sm">
-                            <p className="text-[#ffc72c] text-sm font-medium mb-2">Demo Credentials</p>
-                            <div className="text-gray-300 text-xs space-y-1">
-                                <p>Username: <span className="font-mono bg-white/10 px-2 py-1 rounded">admin</span></p>
-                                <p>Password: <span className="font-mono bg-white/10 px-2 py-1 rounded">admin123</span></p>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
