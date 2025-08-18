@@ -1150,7 +1150,7 @@ async def create_default_user():
         }
         admin_obj = User(**admin_data)
         await db.users.insert_one(admin_obj.dict())
-        logger.info("Created default admin user: admin/admin123")
+        logger.info("Created default admin user: admin/admin1234")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
