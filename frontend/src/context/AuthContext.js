@@ -27,8 +27,8 @@ export const AuthProvider = ({ children }) => {
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          // Show session timeout modal instead of raw error
+        // Only show session timeout modal for 401 errors when user is logged in
+        if (error.response?.status === 401 && token && user) {
           setShowSessionModal(true);
           return Promise.reject(error);
         }
