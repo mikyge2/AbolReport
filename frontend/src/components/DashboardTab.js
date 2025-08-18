@@ -46,6 +46,7 @@ const DashboardTab = () => {
     const [modalData, setModalData] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalType, setModalType] = useState('daily_log');
+    const [modalType, setModalType] = useState('daily_log');
 
     // Create axios instance with auth headers
     const authAxios = axios.create({
