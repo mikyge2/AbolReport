@@ -199,7 +199,7 @@ const ReportsTab = () => {
                             <span>Total Revenue</span>
                         </h3>
                         <p className="text-2xl sm:text-3xl font-bold text-[#ffc72c]">
-                            ${totals.revenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                            ETB {totals.revenue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </p>
                         <p className="text-xs sm:text-sm text-futuristic-muted mt-1">Across all selected reports</p>
                     </div>
