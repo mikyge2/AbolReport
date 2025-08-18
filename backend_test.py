@@ -8,7 +8,7 @@ from io import BytesIO
 class FactoryPortalAPITest(unittest.TestCase):
     def setUp(self):
         # Get the backend URL from the frontend .env file
-        self.base_url = "https://empty-export-debug.preview.emergentagent.com/api"
+        self.base_url = "http://localhost:8001/api"
         self.hq_token = None
         self.hq_user_info = None
         self.factory_token = None
@@ -16,7 +16,7 @@ class FactoryPortalAPITest(unittest.TestCase):
         
         # Test user credentials
         self.hq_username = "admin"
-        self.hq_password = "admin123"
+        self.hq_password = "admin1234"
         
         # Create a directory for downloaded files if it doesn't exist
         self.download_dir = "/tmp/factory_portal_test_downloads"
