@@ -705,7 +705,7 @@ async def export_excel_report(
                     cell.number_format = '#,##0.00'
                 elif config['style'] == 'currency':
                     cell.alignment = right_alignment
-                    cell.number_format = '"$"#,##0.00'
+                    cell.number_format = '"ETB "#,##0.00'
                 else:
                     cell.alignment = data_alignment
         
