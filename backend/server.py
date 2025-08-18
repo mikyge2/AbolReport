@@ -1143,7 +1143,7 @@ async def create_default_user():
         admin_data = {
             "username": "admin",
             "email": "admin@company.com",
-            "password_hash": get_password_hash("admin123"),
+            "password_hash": get_password_hash("admin1234"),
             "role": "headquarters",
             "factory_id": None,
             "created_at": datetime.utcnow()
