@@ -393,7 +393,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix interactive popup information display and improve formatting"
+    - "Completed: Excel export and chart popup fixes"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
