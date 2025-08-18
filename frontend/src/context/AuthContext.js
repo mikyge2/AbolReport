@@ -23,14 +23,13 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
 
-    // Set up axios interceptor for handling 401 errors
+    // Set up axios interceptor for handling 401 errors - only for authenticated users
     const interceptor = axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        // Only show session timeout modal for 401 errors when user is logged in
-        if (error.response?.status === 401 && token && user) {
+        // Only show session timeout modal for 401 errors when user is actually logged in
+        if (error.response?.status === 401 && user && token && !window.location.pathname.includes('/login')) {
           setShowSessionModal(true);
-          return Promise.reject(error);
         }
         return Promise.reject(error);
       }
@@ -40,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       axios.interceptors.response.eject(interceptor);
     };
-  }, []);
+  }, [user, token]);
 
   const fetchUserInfo = async () => {
     try {
