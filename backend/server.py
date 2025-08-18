@@ -654,7 +654,7 @@ async def export_excel_report(
         currency_style = NamedStyle(name="currency_style")
         currency_style.font = data_font
         currency_style.alignment = right_alignment
-        currency_style.number_format = '"ETB "#,##0.00'
+        currency_style.number_format = '#,##0.00'
         
         number_style = NamedStyle(name="number_style")
         number_style.font = data_font
