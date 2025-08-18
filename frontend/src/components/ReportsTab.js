@@ -277,7 +277,7 @@ const ReportsTab = () => {
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{factories[log.factory_id]?.name || log.factory_id}</td>
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{production.toLocaleString()}</td>
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{sales.toLocaleString()}</td>
-                                                <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">${revenue.toFixed(2)}</td>
+                                                <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">ETB {revenue.toFixed(2)}</td>
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{log.downtime_hours.toFixed(2)}h</td>
                                                 <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">{log.created_by}</td>
                                             </tr>
