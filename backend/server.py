@@ -98,123 +98,75 @@ class UserCreate(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
 
-class UserLogin(BaseModel):
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    factory_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+
+class LoginRequest(BaseModel):
     username: str
     password: str
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-    user_info: Dict[str, Any]
 
 class DowntimeReason(BaseModel):
     reason: str
     hours: float
 
-async def migrate_existing_report_ids():
-    """Migrate existing reports to use RPT-XXXXX format"""
-    try:
-        # Find all logs without RPT format
-        cursor = db.daily_logs.find({"report_id": {"$not": {"$regex": "^RPT-\\d{5}$"}}})
-        
-        report_counter = 10000
-        updated_count = 0
-        
-        async for log in cursor:
-            new_report_id = f"RPT-{report_counter:05d}"
-            
-            await db.daily_logs.update_one(
-                {"_id": log["_id"]},
-                {"$set": {"report_id": new_report_id}}
-            )
-            
-            report_counter += 1
-            updated_count += 1
-        
-        print(f"✅ Migration completed: Updated {updated_count} reports with new RPT-XXXXX format")
-        return updated_count
-        
-    except Exception as e:
-        print(f"❌ Migration failed: {e}")
-        return 0
-
-async def get_next_report_id():
-    """Generate next sequential report ID in format RPT-XXXXX starting from RPT-10000"""
-    # Find the highest report_id that matches the pattern
-    cursor = db.daily_logs.find({"report_id": {"$regex": "^RPT-\\d{5}$"}}).sort("report_id", -1).limit(1)
-    
-    highest_report = None
-    async for doc in cursor:
-        highest_report = doc
-        break
-    
-    if highest_report and highest_report.get('report_id'):
-        # Extract the number and increment
-        current_number = int(highest_report['report_id'].split('-')[1])
-        next_number = current_number + 1
-    else:
-        # Start from 10000 if no existing reports
-        next_number = 10000
-    
-    return f"RPT-{next_number:05d}"
-
-async def get_next_report_id():
-    """Generate next sequential report ID in format RPT-XXXXX starting from RPT-10000"""
-    # Find the highest report_id that matches the pattern
-    cursor = db.daily_logs.find({"report_id": {"$regex": "^RPT-\\d{5}$"}}).sort("report_id", -1).limit(1)
-    
-    highest_report = None
-    async for doc in cursor:
-        highest_report = doc
-        break
-    
-    if highest_report and highest_report.get('report_id'):
-        # Extract the number and increment
-        current_number = int(highest_report['report_id'].split('-')[1])
-        next_number = current_number + 1
-    else:
-        # Start from 10000 if no existing reports
-        next_number = 10000
-    
-    return f"RPT-{next_number:05d}"
-
 class DailyLog(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    report_id: str = Field(default="")  # Will be set by get_next_report_id()
-    factory_id: str
+    report_id: str  # RPT-XXXXX format
     date: datetime
-    production_data: Dict[str, float]  # product -> amount
-    sales_data: Dict[str, Dict[str, float]]  # product -> {amount, unit_price}
-    downtime_hours: float
-    downtime_reasons: List[DowntimeReason]  # Updated to support multiple reasons
-    stock_data: Dict[str, float]  # product -> current_stock
+    factory_id: str
+    production_data: Dict[str, int] = Field(default_factory=dict)
+    sales_data: Dict[str, Dict[str, Any]] = Field(default_factory=dict)  
+    downtime_hours: float = 0.0
+    downtime_reasons: List[DowntimeReason] = Field(default_factory=list)
+    stock_data: Dict[str, int] = Field(default_factory=dict)
     created_by: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class DailyLogCreate(BaseModel):
+    date: str
     factory_id: str
-    date: datetime
-    production_data: Dict[str, float]
-    sales_data: Dict[str, Dict[str, float]]
-    downtime_hours: float
-    downtime_reasons: List[DowntimeReason]  # Updated to support multiple reasons
-    stock_data: Dict[str, float]
+    production_data: Dict[str, int] = Field(default_factory=dict)
+    sales_data: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    downtime_hours: float = 0.0
+    downtime_reasons: List[DowntimeReason] = Field(default_factory=list)
+    stock_data: Dict[str, int] = Field(default_factory=dict)
 
 class DailyLogUpdate(BaseModel):
-    factory_id: Optional[str] = None
-    date: Optional[datetime] = None
-    production_data: Optional[Dict[str, float]] = None
-    sales_data: Optional[Dict[str, Dict[str, float]]] = None
+    production_data: Optional[Dict[str, int]] = None
+    sales_data: Optional[Dict[str, Dict[str, Any]]] = None
     downtime_hours: Optional[float] = None
     downtime_reasons: Optional[List[DowntimeReason]] = None
-    stock_data: Optional[Dict[str, float]] = None
+    stock_data: Optional[Dict[str, int]] = None
+
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Logging configuration
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Authentication functions
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
-
-def get_password_hash(password):
+def hash_password(password: str) -> str:
     return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
@@ -243,91 +195,16 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     user = await db.users.find_one({"username": username})
     if user is None:
         raise credentials_exception
-    return User(**user)
+    return user
 
-# Routes
-@api_router.post("/users", response_model=UserResponse)
-async def create_user(user: UserCreate, current_user: User = Depends(get_current_user)):
-    if current_user.role != "headquarters":
-        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
-    
-    # Check if user exists
-    existing_user = await db.users.find_one({"username": user.username})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    # Validate factory_id for factory employers only
-    if user.role == "factory_employer":
-        if not user.factory_id or user.factory_id not in FACTORIES:
-            raise HTTPException(status_code=400, detail="Valid factory_id required for factory employers")
-    elif user.role == "headquarters":
-        # Headquarters users should not have factory_id
-        user.factory_id = None
-    
-    # Create user
-    user_dict = user.dict()
-    user_dict["password_hash"] = get_password_hash(user.password)
-    del user_dict["password"]
-    
-    user_obj = User(**user_dict)
-    await db.users.insert_one(user_obj.dict())
-    
-    # Create response without password_hash
-    user_response = UserResponse(
-        id=user_obj.id,
-        username=user_obj.username,
-        email=user_obj.email,
-        role=user_obj.role,
-        factory_id=user_obj.factory_id,
-        first_name=user_obj.first_name,
-        last_name=user_obj.last_name,
-        created_at=user_obj.created_at
-    )
-    return user_response
-
-@api_router.post("/register", response_model=UserResponse)
-async def register(user: UserCreate):
-    # Check if user exists
-    existing_user = await db.users.find_one({"username": user.username})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
-    
-    # Validate factory_id for factory employers only
-    if user.role == "factory_employer":
-        if not user.factory_id or user.factory_id not in FACTORIES:
-            raise HTTPException(status_code=400, detail="Valid factory_id required for factory employers")
-    elif user.role == "headquarters":
-        # Headquarters users should not have factory_id
-        user.factory_id = None
-    
-    # Create user
-    user_dict = user.dict()
-    user_dict["password_hash"] = get_password_hash(user.password)
-    del user_dict["password"]
-    
-    user_obj = User(**user_dict)
-    await db.users.insert_one(user_obj.dict())
-    
-    # Create response without password_hash
-    user_response = UserResponse(
-        id=user_obj.id,
-        username=user_obj.username,
-        email=user_obj.email,
-        role=user_obj.role,
-        factory_id=user_obj.factory_id,
-        first_name=user_obj.first_name,
-        last_name=user_obj.last_name,
-        created_at=user_obj.created_at
-    )
-    return user_response
-
-@api_router.post("/login", response_model=Token)
-async def login(user_credentials: UserLogin):
-    user = await db.users.find_one({"username": user_credentials.username})
-    if not user or not verify_password(user_credentials.password, user["password_hash"]):
+# Authentication endpoints
+@api_router.post("/auth/login", response_model=Token)
+async def login(user_data: LoginRequest):
+    user = await db.users.find_one({"username": user_data.username})
+    if not user or not verify_password(user_data.password, user["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Invalid username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
@@ -335,823 +212,612 @@ async def login(user_credentials: UserLogin):
     access_token = create_access_token(
         data={"sub": user["username"]}, expires_delta=access_token_expires
     )
-    
-    user_info = {
-        "id": user["id"],
-        "username": user["username"],
-        "email": user["email"],
-        "role": user["role"],
-        "factory_id": user.get("factory_id")
-    }
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user_info": user_info
-    }
+    return {"access_token": access_token, "token_type": "bearer"}
 
+@api_router.get("/auth/me", response_model=UserResponse)
+async def read_users_me(current_user: dict = Depends(get_current_user)):
+    return UserResponse(**current_user)
+
+# Utility functions
+async def get_next_report_id():
+    """Generate next sequential report ID"""
+    # Find the highest existing report ID
+    pipeline = [
+        {"$match": {"report_id": {"$regex": "^RPT-\\d{5}$"}}},
+        {"$addFields": {
+            "report_number": {
+                "$toInt": {"$substr": ["$report_id", 4, -1]}
+            }
+        }},
+        {"$sort": {"report_number": -1}},
+        {"$limit": 1}
+    ]
+    
+    result = await db.daily_logs.aggregate(pipeline).to_list(length=1)
+    
+    if result:
+        next_number = result[0]["report_number"] + 1
+    else:
+        next_number = 10000  # Start from RPT-10000
+    
+    return f"RPT-{next_number:05d}"
+
+# Factory configuration endpoint
 @api_router.get("/factories")
 async def get_factories():
     return FACTORIES
 
-@api_router.post("/daily-logs", response_model=DailyLog)
-async def create_daily_log(log: DailyLogCreate, current_user: User = Depends(get_current_user)):
-    # Validate factory access
-    if current_user.role == "factory_employer" and current_user.factory_id != log.factory_id:
-        raise HTTPException(status_code=403, detail="Access denied to this factory")
+# Daily logs endpoints
+@api_router.post("/daily-logs")
+async def create_daily_log(log_data: DailyLogCreate, current_user: dict = Depends(get_current_user)):
+    # Check user permissions
+    if current_user["role"] == "factory_employer" and log_data.factory_id != current_user.get("factory_id"):
+        raise HTTPException(status_code=403, detail="Cannot create logs for other factories")
     
-    # Check if log for this date already exists
+    # Check if log already exists for this date and factory
     existing_log = await db.daily_logs.find_one({
-        "factory_id": log.factory_id,
-        "date": log.date
+        "date": datetime.fromisoformat(log_data.date),
+        "factory_id": log_data.factory_id
     })
     if existing_log:
-        raise HTTPException(status_code=400, detail="Daily log for this date already exists")
-    
-    log_dict = log.dict()
-    log_dict["created_by"] = current_user.username
+        raise HTTPException(status_code=400, detail="Daily log already exists for this date and factory")
     
     # Generate sequential report ID
     report_id = await get_next_report_id()
-    log_dict["report_id"] = report_id
     
-    log_obj = DailyLog(**log_dict)
+    # Create the daily log
+    daily_log = DailyLog(
+        report_id=report_id,
+        date=datetime.fromisoformat(log_data.date),
+        factory_id=log_data.factory_id,
+        production_data=log_data.production_data,
+        sales_data=log_data.sales_data,
+        downtime_hours=log_data.downtime_hours,
+        downtime_reasons=log_data.downtime_reasons,
+        stock_data=log_data.stock_data,
+        created_by=current_user["username"]
+    )
     
-    await db.daily_logs.insert_one(log_obj.dict())
-    return log_obj
+    # Convert to dict for insertion
+    log_dict = daily_log.dict()
+    
+    result = await db.daily_logs.insert_one(log_dict)
+    if result.inserted_id:
+        return {"message": "Daily log created successfully", "report_id": report_id}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to create daily log")
 
-@api_router.get("/daily-logs", response_model=List[DailyLog])
+@api_router.get("/daily-logs")
 async def get_daily_logs(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     factory_id: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
     created_by_me: Optional[bool] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
+    # Build query filters
     query = {}
     
-    # Filter by factory access
-    if current_user.role == "factory_employer":
-        query["factory_id"] = current_user.factory_id
+    # Role-based filtering
+    if current_user["role"] == "factory_employer":
+        query["factory_id"] = current_user.get("factory_id")
     elif factory_id:
         query["factory_id"] = factory_id
     
-    # Filter by creator if requested
-    if created_by_me:
-        query["created_by"] = current_user.username
-    
     # Date filtering
     if start_date or end_date:
-        query["date"] = {}
+        date_filter = {}
         if start_date:
-            query["date"]["$gte"] = start_date
+            date_filter["$gte"] = datetime.fromisoformat(start_date)
         if end_date:
-            query["date"]["$lte"] = end_date
+            date_filter["$lte"] = datetime.fromisoformat(end_date)
+        query["date"] = date_filter
     
-    logs = await db.daily_logs.find(query).to_list(1000)
-    return [DailyLog(**log) for log in logs]
+    # Created by me filter
+    if created_by_me:
+        query["created_by"] = current_user["username"]
+    
+    # Fetch logs
+    logs = await db.daily_logs.find(query).sort("date", -1).to_list(length=None)
+    
+    # Convert ObjectId to string and format dates
+    for log in logs:
+        log["_id"] = str(log["_id"])
+        if isinstance(log.get("date"), datetime):
+            log["date"] = log["date"].isoformat()
+        if isinstance(log.get("created_at"), datetime):
+            log["created_at"] = log["created_at"].isoformat()
+    
+    return logs
 
-@api_router.put("/daily-logs/{log_id}", response_model=DailyLog)
-async def update_daily_log(log_id: str, log_update: DailyLogUpdate, current_user: User = Depends(get_current_user)):
-    # Find the existing log
-    existing_log = await db.daily_logs.find_one({"id": log_id})
-    if not existing_log:
+@api_router.put("/daily-logs/{log_id}")
+async def update_daily_log(log_id: str, log_update: DailyLogUpdate, current_user: dict = Depends(get_current_user)):
+    # Find the log
+    log = await db.daily_logs.find_one({"id": log_id})
+    if not log:
         raise HTTPException(status_code=404, detail="Daily log not found")
     
-    # Check if user is the creator of this log
-    if existing_log["created_by"] != current_user.username:
-        raise HTTPException(status_code=403, detail="You can only edit your own daily logs")
+    # Check permissions (only creator can edit)
+    if log["created_by"] != current_user["username"]:
+        raise HTTPException(status_code=403, detail="Can only edit your own logs")
     
-    # Validate factory access (user should not be able to change factory_id to unauthorized factory)
-    if log_update.factory_id is not None:
-        if current_user.role == "factory_employer" and current_user.factory_id != log_update.factory_id:
-            raise HTTPException(status_code=403, detail="Access denied to this factory")
+    # Factory permission check for factory employees
+    if current_user["role"] == "factory_employer" and log["factory_id"] != current_user.get("factory_id"):
+        raise HTTPException(status_code=403, detail="Cannot edit logs from other factories")
     
-    # If user is editing date, check for conflicts
-    if log_update.date is not None and log_update.date != existing_log["date"]:
-        existing_factory_id = log_update.factory_id if log_update.factory_id is not None else existing_log["factory_id"]
-        conflicting_log = await db.daily_logs.find_one({
-            "factory_id": existing_factory_id,
-            "date": log_update.date,
-            "id": {"$ne": log_id}  # Exclude current log
-        })
-        if conflicting_log:
-            raise HTTPException(status_code=400, detail="Daily log for this date already exists")
-    
-    # Prepare update data - only update fields that are provided
+    # Prepare update data
     update_data = {}
-    for field, value in log_update.dict(exclude_unset=True).items():
-        update_data[field] = value
+    if log_update.production_data is not None:
+        update_data["production_data"] = log_update.production_data
+    if log_update.sales_data is not None:
+        update_data["sales_data"] = log_update.sales_data
+    if log_update.downtime_hours is not None:
+        update_data["downtime_hours"] = log_update.downtime_hours
+    if log_update.downtime_reasons is not None:
+        update_data["downtime_reasons"] = [reason.dict() for reason in log_update.downtime_reasons]
+    if log_update.stock_data is not None:
+        update_data["stock_data"] = log_update.stock_data
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
     
     # Update the log
-    await db.daily_logs.update_one({"id": log_id}, {"$set": update_data})
+    result = await db.daily_logs.update_one(
+        {"id": log_id},
+        {"$set": update_data}
+    )
     
-    # Return updated log
-    updated_log = await db.daily_logs.find_one({"id": log_id})
-    return DailyLog(**updated_log)
+    if result.modified_count > 0:
+        return {"message": "Daily log updated successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to update daily log")
 
 @api_router.delete("/daily-logs/{log_id}")
-async def delete_daily_log(log_id: str, current_user: User = Depends(get_current_user)):
-    # Find the existing log
-    existing_log = await db.daily_logs.find_one({"id": log_id})
-    if not existing_log:
+async def delete_daily_log(log_id: str, current_user: dict = Depends(get_current_user)):
+    # Find the log
+    log = await db.daily_logs.find_one({"id": log_id})
+    if not log:
         raise HTTPException(status_code=404, detail="Daily log not found")
     
-    # Check if user is the creator of this log
-    if existing_log["created_by"] != current_user.username:
-        raise HTTPException(status_code=403, detail="You can only delete your own daily logs")
+    # Check permissions (only creator can delete)
+    if log["created_by"] != current_user["username"]:
+        raise HTTPException(status_code=403, detail="Can only delete your own logs")
+    
+    # Factory permission check for factory employees
+    if current_user["role"] == "factory_employer" and log["factory_id"] != current_user.get("factory_id"):
+        raise HTTPException(status_code=403, detail="Cannot delete logs from other factories")
     
     # Delete the log
     result = await db.daily_logs.delete_one({"id": log_id})
-    if result.deleted_count == 0:
+    
+    if result.deleted_count > 0:
+        return {"message": "Daily log deleted successfully"}
+    else:
         raise HTTPException(status_code=500, detail="Failed to delete daily log")
-    
-    return {"message": "Daily log deleted successfully"}
-
-@api_router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
-    return UserResponse(
-        id=current_user.id,
-        username=current_user.username,
-        email=current_user.email,
-        role=current_user.role,
-        factory_id=current_user.factory_id,
-        created_at=current_user.created_at
-    )
-
-@api_router.get("/users", response_model=List[UserResponse])
-async def list_users(current_user: User = Depends(get_current_user)):
-    if current_user.role != "headquarters":
-        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
-    
-    users = await db.users.find().to_list(1000)
-    return [
-        UserResponse(
-            id=u["id"],
-            username=u["username"],
-            email=u["email"],
-            role=u["role"],
-            factory_id=u.get("factory_id"),
-            first_name=u.get("first_name"),
-            last_name=u.get("last_name"),
-            created_at=u["created_at"]
-        )
-        for u in users
-    ]
-
-@api_router.put("/users/{user_id}", response_model=UserResponse)
-async def update_user(user_id: str, updated_data: dict, current_user: User = Depends(get_current_user)):
-    if current_user.role != "headquarters":
-        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
-    
-    existing_user = await db.users.find_one({"id": user_id})
-    if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    updates = {}
-
-    # You can selectively allow fields to be updated
-    if "first_name" in updated_data:
-        updates["first_name"] = updated_data["first_name"]
-    if "last_name" in updated_data:
-        updates["last_name"] = updated_data["last_name"]
-    if "username" in updated_data:
-        updates["username"] = updated_data["username"]
-    if "email" in updated_data:
-        updates["email"] = updated_data["email"]
-    if "role" in updated_data:
-        updates["role"] = updated_data["role"]
-    if "password" in updated_data and updated_data["password"]:
-        updates["password_hash"] = get_password_hash(updated_data["password"])
-    if "factory_id" in updated_data:
-        updates["factory_id"] = updated_data["factory_id"]
-
-    await db.users.update_one({"id": user_id}, {"$set": updates})
-
-    # Return updated user
-    user = await db.users.find_one({"id": user_id})
-    return UserResponse(
-        id=user["id"],
-        username=user["username"],
-        email=user["email"],
-        role=user["role"],
-        factory_id=user.get("factory_id"),
-        first_name=user.get("first_name"),
-        last_name=user.get("last_name"),
-        created_at=user["created_at"]
-    )
-
-@api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str, current_user: User = Depends(get_current_user)):
-    if current_user.role != "headquarters":
-        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
-    
-    result = await db.users.delete_one({"id": user_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return {"detail": "User deleted successfully"}
 
 # Add migration endpoint for admin use
 @api_router.post("/admin/migrate-report-ids")
-async def migrate_report_ids_endpoint(current_user: User = Depends(get_current_user)):
-    if current_user.role != "headquarters":
-        raise HTTPException(status_code=403, detail="Only headquarters users can run migrations")
+async def migrate_report_ids(current_user: dict = Depends(get_current_user)):
+    # Only headquarters users can run migration
+    if current_user["role"] != "headquarters":
+        raise HTTPException(status_code=403, detail="Only headquarters users can run migration")
     
-    updated_count = await migrate_existing_report_ids()
-    return {"message": f"Migration completed: Updated {updated_count} reports"}
-
-@api_router.get("/export-excel")
-async def export_excel_report(
-    factory_id: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-    current_user: User = Depends(get_current_user)
-):
-    """Export comprehensive Excel report"""
-    query = {}
-    
-    # Filter by factory access
-    if current_user.role == "factory_employer":
-        query["factory_id"] = current_user.factory_id
-    elif factory_id:
-        query["factory_id"] = factory_id
-    
-    # Date filtering
-    if start_date or end_date:
-        query["date"] = {}
-        if start_date:
-            query["date"]["$gte"] = start_date
-        if end_date:
-            query["date"]["$lte"] = end_date
-    
-    # Get logs
-    logs = await db.daily_logs.find(query).to_list(1000)
-    
-    if not logs:
-        raise HTTPException(status_code=404, detail="No data found for the specified criteria")
-    
-    # Prepare data for Excel
-    excel_data = []
-    for log in logs:
-        factory_name = FACTORIES.get(log["factory_id"], {}).get("name", log["factory_id"])
-        sku_unit = FACTORIES.get(log["factory_id"], {}).get("sku_unit", "Unit")
+    try:
+        # Find all logs without report_id or with empty report_id
+        logs_to_update = await db.daily_logs.find({
+            "$or": [
+                {"report_id": {"$exists": False}},
+                {"report_id": ""},
+                {"report_id": None}
+            ]
+        }).sort("created_at", 1).to_list(length=None)
         
-        # Base row data
-        downtime_reasons_str = "; ".join([f"{reason['reason']} ({reason['hours']}h)" for reason in log.get("downtime_reasons", [])])
-        base_row = {
-            "Report ID": log.get("report_id", "N/A"),
-            "Date": log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"],
-            "Factory": factory_name,
-            "SKU Unit": sku_unit,
-            "Downtime Hours": log["downtime_hours"],
-            "Downtime Reasons": downtime_reasons_str,
-            "Created By": log["created_by"]
-        }
+        updated_count = 0
+        current_number = 10000
         
-        # Add production data
-        for product, amount in log["production_data"].items():
-            row = base_row.copy()
-            row.update({
-                "Product": product,
-                "Production Amount": amount,
-                "Sales Amount": log["sales_data"].get(product, {}).get("amount", 0),
-                "Unit Price": log["sales_data"].get(product, {}).get("unit_price", 0),
-                "Revenue": log["sales_data"].get(product, {}).get("amount", 0) * log["sales_data"].get(product, {}).get("unit_price", 0),
-                "Current Stock": log["stock_data"].get(product, 0)
-            })
-            excel_data.append(row)
-    
-    # Create Excel file
-    df = pd.DataFrame(excel_data)
-    
-    # Create Excel writer object
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Main data sheet
-        df.to_excel(writer, sheet_name='Daily Logs', index=False)
-        
-        # Get the workbook and worksheet for styling
-        workbook = writer.book
-        worksheet = writer.sheets['Daily Logs']
-        
-        # Apply styling to headers
-        from openpyxl.styles import Font, PatternFill, Alignment, Border, Side, NamedStyle
-        from openpyxl.utils import get_column_letter
-        
-        # Create professional styles
-        header_font = Font(name="Calibri", bold=True, color="FFFFFF", size=12)
-        header_fill = PatternFill(start_color="2F4F4F", end_color="2F4F4F", fill_type="solid")  # Dark slate gray
-        header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        
-        # Data styles
-        data_font = Font(name="Calibri", size=11)
-        data_alignment = Alignment(horizontal="left", vertical="center")
-        center_alignment = Alignment(horizontal="center", vertical="center")
-        right_alignment = Alignment(horizontal="right", vertical="center")
-        
-        # Currency and number styles
-        currency_style = NamedStyle(name="currency_style")
-        currency_style.font = data_font
-        currency_style.alignment = right_alignment
-        currency_style.number_format = '#,##0.00'
-        
-        number_style = NamedStyle(name="number_style")
-        number_style.font = data_font
-        number_style.alignment = right_alignment
-        number_style.number_format = '#,##0.00'
-        
-        # Apply header styling with freeze panes
-        for cell in worksheet[1]:
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # Freeze top row for better navigation
-        worksheet.freeze_panes = "A2"
-        
-        # Set specific column widths and apply formatting
-        column_config = {
-            'A': {'width': 12, 'style': 'center'},      # Report ID
-            'B': {'width': 12, 'style': 'center'},      # Date
-            'C': {'width': 20, 'style': 'left'},        # Factory
-            'D': {'width': 12, 'style': 'center'},      # SKU Unit
-            'E': {'width': 18, 'style': 'left'},        # Product
-            'F': {'width': 15, 'style': 'number'},      # Production Amount
-            'G': {'width': 15, 'style': 'number'},      # Sales Amount
-            'H': {'width': 12, 'style': 'currency'},    # Unit Price
-            'I': {'width': 15, 'style': 'currency'},    # Revenue
-            'J': {'width': 15, 'style': 'number'},      # Current Stock
-            'K': {'width': 15, 'style': 'number'},      # Downtime Hours
-            'L': {'width': 30, 'style': 'left'},        # Downtime Reasons
-            'M': {'width': 15, 'style': 'left'},        # Created By
-        }
-        
-        # Apply column configurations
-        for col_letter, config in column_config.items():
-            worksheet.column_dimensions[col_letter].width = config['width']
+        for log in logs_to_update:
+            report_id = f"RPT-{current_number:05d}"
             
-            # Apply styling to data cells in this column
-            for row_num in range(2, worksheet.max_row + 1):
-                cell = worksheet[f"{col_letter}{row_num}"]
-                cell.font = data_font
-                
-                if config['style'] == 'center':
-                    cell.alignment = center_alignment
-                elif config['style'] == 'right':
-                    cell.alignment = right_alignment
-                elif config['style'] == 'number':
-                    cell.alignment = right_alignment
-                    cell.number_format = '#,##0.00'
-                elif config['style'] == 'currency':
-                    cell.alignment = right_alignment
-                    cell.number_format = '"ETB "#,##0.00'
-                else:
-                    cell.alignment = data_alignment
+            await db.daily_logs.update_one(
+                {"_id": log["_id"]},
+                {"$set": {"report_id": report_id}}
+            )
+            
+            updated_count += 1
+            current_number += 1
         
-        # Add professional borders
-        thin_border = Border(
-            left=Side(style='thin', color='D3D3D3'),
-            right=Side(style='thin', color='D3D3D3'),
-            top=Side(style='thin', color='D3D3D3'),
-            bottom=Side(style='thin', color='D3D3D3')
-        )
-        
-        # Apply borders and alternating row colors
-        light_fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
-        
-        for row_num, row in enumerate(worksheet.iter_rows(min_row=2), start=2):
-            for cell in row:
-                cell.border = thin_border
-                # Apply alternating row colors
-                if row_num % 2 == 0:
-                    cell.fill = light_fill
-        
-        # Summary sheet
-        summary_data = []
-        for factory_id, factory_info in FACTORIES.items():
-            factory_logs = [log for log in logs if log["factory_id"] == factory_id]
-            if factory_logs:
-                total_production = sum(sum(log["production_data"].values()) for log in factory_logs)
-                total_sales = sum(sum(item["amount"] for item in log["sales_data"].values()) for log in factory_logs)
-                total_revenue = sum(sum(item["amount"] * item["unit_price"] for item in log["sales_data"].values()) for log in factory_logs)
-                total_downtime = sum(log["downtime_hours"] for log in factory_logs)
-                avg_stock = sum(sum(log["stock_data"].values()) for log in factory_logs) / len(factory_logs)
-                
-                summary_data.append({
-                    "Factory": factory_info["name"],
-                    "Total Production": f"{total_production:,.2f}",
-                    "Total Sales": f"{total_sales:,.2f}",
-                    "Total Revenue": f"ETB {total_revenue:,.2f}",
-                    "Total Downtime (Hours)": f"{total_downtime:.1f}",
-                    "Average Stock": f"{avg_stock:,.2f}",
-                    "Number of Records": len(factory_logs)
-                })
-        
-        summary_df = pd.DataFrame(summary_data)
-        summary_df.to_excel(writer, sheet_name='Summary', index=False)
-        
-        # Style summary sheet with professional formatting
-        summary_worksheet = writer.sheets['Summary']
-        
-        # Apply header styling to summary sheet
-        for cell in summary_worksheet[1]:
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # Freeze panes for summary sheet
-        summary_worksheet.freeze_panes = "A2"
-        
-        # Configure summary sheet columns
-        summary_column_config = {
-            'A': {'width': 25, 'style': 'left'},        # Factory
-            'B': {'width': 18, 'style': 'number'},      # Total Production
-            'C': {'width': 18, 'style': 'number'},      # Total Sales
-            'D': {'width': 18, 'style': 'currency'},    # Total Revenue
-            'E': {'width': 20, 'style': 'number'},      # Total Downtime
-            'F': {'width': 18, 'style': 'number'},      # Average Stock
-            'G': {'width': 18, 'style': 'center'},      # Number of Records
+        return {
+            "message": f"Migration completed successfully",
+            "updated_count": updated_count,
+            "starting_report_id": "RPT-10000" if updated_count > 0 else None
         }
         
-        # Apply summary column configurations
-        for col_letter, config in summary_column_config.items():
-            summary_worksheet.column_dimensions[col_letter].width = config['width']
-            
-            # Apply styling to data cells in summary sheet
-            for row_num in range(2, summary_worksheet.max_row + 1):
-                cell = summary_worksheet[f"{col_letter}{row_num}"]
-                cell.font = data_font
-                
-                if config['style'] == 'center':
-                    cell.alignment = center_alignment
-                elif config['style'] == 'right':
-                    cell.alignment = right_alignment
-                elif config['style'] == 'number':
-                    cell.alignment = right_alignment
-                    cell.number_format = '#,##0.00'
-                elif config['style'] == 'currency':
-                    cell.alignment = right_alignment
-                    cell.number_format = '"ETB "#,##0.00'
-                else:
-                    cell.alignment = data_alignment
-        
-        # Add borders and alternating colors to summary sheet
-        for row_num, row in enumerate(summary_worksheet.iter_rows(min_row=2), start=2):
-            for cell in row:
-                cell.border = thin_border
-                if row_num % 2 == 0:
-                    cell.fill = light_fill
-        
-        # Add a title to the summary sheet
-        summary_worksheet.insert_rows(1)
-        title_cell = summary_worksheet['A1']
-        title_cell.value = f"Factory Performance Summary Report - Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}"
-        title_cell.font = Font(name="Calibri", bold=True, size=14, color="2F4F4F")
-        title_cell.alignment = Alignment(horizontal="left", vertical="center")
-        summary_worksheet.merge_cells('A1:G1')
-        
-        # Move headers to row 2
-        summary_worksheet.freeze_panes = "A3"
-    
-    output.seek(0)
-    
-    # Generate filename
-    filename = f"factory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-    
-    return StreamingResponse(
-        BytesIO(output.read()),
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+    except Exception as e:
+        logger.error(f"Migration error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Migration failed: {str(e)}")
 
+# Analytics endpoints
 @api_router.get("/analytics/trends")
-async def get_analytics_trends(
-    factory_id: Optional[str] = None,
-    days: int = 30,
-    current_user: User = Depends(get_current_user)
-):
-    """Get analytics trends for charts"""
-    print(f"Analytics trends request - User: {current_user.username}, Role: {current_user.role}, Factory ID: {current_user.factory_id}")
+async def get_analytics_trends(days: int = 30, current_user: dict = Depends(get_current_user)):
+    end_date = datetime.utcnow()
+    start_date = end_date - timedelta(days=days)
     
+    # Build query based on user role
+    query = {"date": {"$gte": start_date, "$lte": end_date}}
+    if current_user["role"] == "factory_employer":
+        query["factory_id"] = current_user.get("factory_id")
+    
+    logs = await db.daily_logs.find(query).to_list(length=None)
+    
+    # Group data by factory
+    factories_data = {}
+    for factory_id, factory_config in FACTORIES.items():
+        # Skip factories not accessible to current user
+        if current_user["role"] == "factory_employer" and factory_id != current_user.get("factory_id"):
+            continue
+            
+        factory_logs = [log for log in logs if log["factory_id"] == factory_id]
+        
+        # Create date range
+        dates = []
+        current_date = start_date
+        while current_date <= end_date:
+            dates.append(current_date.strftime("%Y-%m-%d"))
+            current_date += timedelta(days=1)
+        
+        # Initialize data arrays
+        production_data = []
+        sales_data = []
+        production_by_product = {product: [] for product in factory_config["products"]}
+        sales_by_product = {product: [] for product in factory_config["products"]}
+        
+        # Fill data for each date
+        for date_str in dates:
+            date_obj = datetime.fromisoformat(date_str)
+            day_logs = [log for log in factory_logs if log["date"].date() == date_obj.date()]
+            
+            daily_production = 0
+            daily_sales = 0
+            
+            for product in factory_config["products"]:
+                product_production = 0
+                product_sales = 0
+                
+                for log in day_logs:
+                    if product in log.get("production_data", {}):
+                        product_production += log["production_data"][product]
+                    if product in log.get("sales_data", {}):
+                        product_sales += log["sales_data"][product].get("amount", 0)
+                
+                production_by_product[product].append(product_production)
+                sales_by_product[product].append(product_sales)
+                daily_production += product_production
+                daily_sales += product_sales
+            
+            production_data.append(daily_production)
+            sales_data.append(daily_sales)
+        
+        factories_data[factory_id] = {
+            "name": factory_config["name"],
+            "dates": dates,
+            "production": production_data,
+            "sales": sales_data,
+            "production_by_product": production_by_product,
+            "sales_by_product": sales_by_product
+        }
+    
+    logger.info(f"Analytics trends request - User: {current_user['username']}, Role: {current_user['role']}, Factory ID: {current_user.get('factory_id', 'None')}")
+    
+    return {
+        "factories": factories_data,
+        "date_range": {"start": start_date.isoformat(), "end": end_date.isoformat()}
+    }
+
+@api_router.get("/dashboard-summary")
+async def get_dashboard_summary(current_user: dict = Depends(get_current_user)):
+    # Build query based on user role
     query = {}
+    if current_user["role"] == "factory_employer":
+        query["factory_id"] = current_user.get("factory_id")
     
-    # Filter by factory access
-    if current_user.role == "factory_employer":
-        query["factory_id"] = current_user.factory_id
-    elif factory_id:
-        query["factory_id"] = factory_id
+    logs = await db.daily_logs.find(query).to_list(length=None)
     
-    # Date filtering for last N days
-    start_date = datetime.utcnow() - timedelta(days=days)
-    query["date"] = {"$gte": start_date}
+    total_downtime = sum(log.get("downtime_hours", 0) for log in logs)
+    total_stock = sum(sum(log.get("stock_data", {}).values()) for log in logs)
     
-    logs = await db.daily_logs.find(query).sort("date", 1).to_list(1000)
-    
-    # For single factory (factory_employer or specific factory requested)
-    if current_user.role == "factory_employer" or (factory_id is not None and factory_id != ""):
-        # Prepare single factory trend data
-        trends = {
-            "production": [],
-            "sales": [],
-            "downtime": [],
-            "stock": [],
-            "dates": []
-        }
-        
-        # Group by date
-        daily_data = {}
-        for log in logs:
-            date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
-            if date_str not in daily_data:
-                daily_data[date_str] = {
-                    "production": 0,
-                    "sales": 0,
-                    "downtime": 0,
-                    "stock": 0
-                }
-            
-            daily_data[date_str]["production"] += sum(log["production_data"].values())
-            for item in log["sales_data"].values():
-                if isinstance(item, dict):
-                    daily_data[date_str]["sales"] += item.get("amount", 0)
-                else:
-                    daily_data[date_str]["sales"] += item
-            daily_data[date_str]["downtime"] += log["downtime_hours"]
-            daily_data[date_str]["stock"] += sum(log["stock_data"].values())
-        
-        # Sort by date and prepare final data
-        for date_str in sorted(daily_data.keys()):
-            trends["dates"].append(date_str)
-            trends["production"].append(daily_data[date_str]["production"])
-            trends["sales"].append(daily_data[date_str]["sales"])
-            trends["downtime"].append(daily_data[date_str]["downtime"])
-            trends["stock"].append(daily_data[date_str]["stock"])
-        
-        return trends
-    
-    # For headquarters - return factory-specific data
+    # Count unique factories based on role
+    if current_user["role"] == "factory_employer":
+        active_factories = 1 if logs else 0
     else:
-        # Prepare factory-specific trend data
-        factory_trends = {
-            "factories": {},
-            "dates": [],
-            "downtime": [],
-            "stock": []
-        }
+        unique_factories = set(log.get("factory_id") for log in logs)
+        active_factories = len(unique_factories)
+    
+    logger.info(f"Returning factory trends for {current_user['role']}:")
+    logger.info(f"- Number of factories: {active_factories}")
+    if current_user["role"] == "headquarters":
+        factory_ids = list(set(log.get("factory_id") for log in logs))
+        logger.info(f"- Factory IDs: {factory_ids}")
+        logger.info(f"- Date range: {len(set(log.get('date').date() if log.get('date') else None for log in logs if log.get('date')))} days")
         
-        # Get all unique dates
-        all_dates = set()
-        for log in logs:
-            date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
-            all_dates.add(date_str)
-        
-        factory_trends["dates"] = sorted(list(all_dates))
-        
-        # Initialize factory data
-        for factory_id, factory_info in FACTORIES.items():
-            factory_trends["factories"][factory_id] = {
-                "name": factory_info["name"],
-                "dates": factory_trends["dates"].copy(),
-                "production": [0] * len(factory_trends["dates"]),
-                "sales": [0] * len(factory_trends["dates"]),
-                "production_by_product": {},
-                "sales_by_product": {}
-            }
-            
-            # Initialize product-level arrays for each factory
-            for product in factory_info["products"]:
-                factory_trends["factories"][factory_id]["production_by_product"][product] = [0] * len(factory_trends["dates"])
-                factory_trends["factories"][factory_id]["sales_by_product"][product] = [0] * len(factory_trends["dates"])
-        
-        # Initialize overall downtime and stock arrays
-        factory_trends["downtime"] = [0] * len(factory_trends["dates"])
-        factory_trends["stock"] = [0] * len(factory_trends["dates"])
-        
-        # Group logs by factory and date
-        factory_daily_data = {}
-        product_daily_data = {}  # Track product-level data
-        overall_daily_data = {}
-        
-        for log in logs:
-            date_str = log["date"].strftime("%Y-%m-%d") if isinstance(log["date"], datetime) else log["date"]
-            factory_id = log["factory_id"]
-            
-            # Factory-specific aggregate data
-            if factory_id not in factory_daily_data:
-                factory_daily_data[factory_id] = {}
-            
-            if date_str not in factory_daily_data[factory_id]:
-                factory_daily_data[factory_id][date_str] = {
-                    "production": 0,
-                    "sales": 0
-                }
-            
-            factory_daily_data[factory_id][date_str]["production"] += sum(log["production_data"].values())
-            for item in log["sales_data"].values():
-                if isinstance(item, dict):
-                    factory_daily_data[factory_id][date_str]["sales"] += item.get("amount", 0)
-                else:
-                    factory_daily_data[factory_id][date_str]["sales"] += item
-
-            # Product-specific data tracking
-            if factory_id not in product_daily_data:
-                product_daily_data[factory_id] = {}
-            
-            if date_str not in product_daily_data[factory_id]:
-                product_daily_data[factory_id][date_str] = {}
-            
-            # Track production by product
-            for product, production_amount in log["production_data"].items():
-                if product not in product_daily_data[factory_id][date_str]:
-                    product_daily_data[factory_id][date_str][product] = {"production": 0, "sales": 0}
-                product_daily_data[factory_id][date_str][product]["production"] += production_amount
-            
-            # Track sales by product
-            for product, sales_item in log["sales_data"].items():
-                if product not in product_daily_data[factory_id][date_str]:
-                    product_daily_data[factory_id][date_str][product] = {"production": 0, "sales": 0}
-                
-                if isinstance(sales_item, dict):
-                    product_daily_data[factory_id][date_str][product]["sales"] += sales_item.get("amount", 0)
-                else:
-                    product_daily_data[factory_id][date_str][product]["sales"] += sales_item
-
-            
-            # Overall data for downtime and stock
-            if date_str not in overall_daily_data:
-                overall_daily_data[date_str] = {
-                    "downtime": 0,
-                    "stock": 0
-                }
-            
-            overall_daily_data[date_str]["downtime"] += log["downtime_hours"]
-            overall_daily_data[date_str]["stock"] += sum(log["stock_data"].values())
-        
-        # Fill in the factory trend data
-        for factory_id, factory_info in FACTORIES.items():
-            for i, date_str in enumerate(factory_trends["dates"]):
-                if factory_id in factory_daily_data and date_str in factory_daily_data[factory_id]:
-                    factory_trends["factories"][factory_id]["production"][i] = factory_daily_data[factory_id][date_str]["production"]
-                    factory_trends["factories"][factory_id]["sales"][i] = factory_daily_data[factory_id][date_str]["sales"]
-                
-                # Fill product-level data
-                for product in factory_info["products"]:
-                    if (factory_id in product_daily_data and 
-                        date_str in product_daily_data[factory_id] and 
-                        product in product_daily_data[factory_id][date_str]):
-                        
-                        factory_trends["factories"][factory_id]["production_by_product"][product][i] = product_daily_data[factory_id][date_str][product]["production"]
-                        factory_trends["factories"][factory_id]["sales_by_product"][product][i] = product_daily_data[factory_id][date_str][product]["sales"]
-        
-        # Fill in overall downtime and stock data
-        for i, date_str in enumerate(factory_trends["dates"]):
-            if date_str in overall_daily_data:
-                factory_trends["downtime"][i] = overall_daily_data[date_str]["downtime"]
-                factory_trends["stock"][i] = overall_daily_data[date_str]["stock"]
-        
-        # Add this before the return statement in the headquarters section:
-        print(f"Returning factory trends for headquarters:")
-        print(f"- Number of factories: {len(factory_trends['factories'])}")
-        print(f"- Factory IDs: {list(factory_trends['factories'].keys())}")
-        print(f"- Date range: {len(factory_trends['dates'])} days")
-        for fid, fdata in factory_trends['factories'].items():
-            print(f"  Factory {fid}: {sum(fdata['production'])} total production, {sum(fdata['sales'])} total sales")
-
-        return factory_trends
+        # Log production and sales totals per factory
+        for factory_id in factory_ids:
+            factory_logs = [log for log in logs if log.get("factory_id") == factory_id]
+            total_production = sum(sum(log.get("production_data", {}).values()) for log in factory_logs)
+            total_sales = sum(sum(log.get("sales_data", {}).get(product, {}).get("amount", 0) for product in log.get("sales_data", {})) for log in factory_logs)
+            logger.info(f"  Factory {factory_id}: {total_production} total production, {total_sales} total sales")
+    
+    return {
+        "total_downtime": total_downtime,
+        "active_factories": active_factories,
+        "total_stock": total_stock
+    }
 
 @api_router.get("/analytics/factory-comparison")
-async def get_factory_comparison(
-    current_user: User = Depends(get_current_user)
-):
-    """Get factory comparison data - today's data only"""
-    if current_user.role == "factory_employer":
-        raise HTTPException(status_code=403, detail="Access restricted to headquarters only")
+async def get_factory_comparison(current_user: dict = Depends(get_current_user)):
+    # Only headquarters can access factory comparison
+    if current_user["role"] != "headquarters":
+        raise HTTPException(status_code=403, detail="Access denied")
     
     # Get today's data only
     today = datetime.utcnow().date()
     start_of_day = datetime.combine(today, datetime.min.time())
     end_of_day = datetime.combine(today, datetime.max.time())
+    
     query = {"date": {"$gte": start_of_day, "$lte": end_of_day}}
+    logs = await db.daily_logs.find(query).to_list(length=None)
     
-    logs = await db.daily_logs.find(query).to_list(1000)
-    
-    factory_data = {}
-    for factory_id, factory_info in FACTORIES.items():
+    # Group by factory
+    factory_stats = []
+    for factory_id, factory_config in FACTORIES.items():
         factory_logs = [log for log in logs if log["factory_id"] == factory_id]
         
-        total_production = sum(sum(log["production_data"].values()) for log in factory_logs)
-        total_sales = sum(sum(item["amount"] for item in log["sales_data"].values()) for log in factory_logs)
-        total_revenue = sum(sum(item["amount"] * item["unit_price"] for item in log["sales_data"].values()) for log in factory_logs)
-        total_downtime = sum(log["downtime_hours"] for log in factory_logs)
+        total_production = sum(sum(log.get("production_data", {}).values()) for log in factory_logs)
+        total_sales = sum(sum(log.get("sales_data", {}).get(product, {}).get("amount", 0) for product in log.get("sales_data", {})) for log in factory_logs)
+        total_revenue = sum(sum(log.get("sales_data", {}).get(product, {}).get("amount", 0) * log.get("sales_data", {}).get(product, {}).get("unit_price", 0) for product in log.get("sales_data", {})) for log in factory_logs)
+        total_downtime = sum(log.get("downtime_hours", 0) for log in factory_logs)
         
-        factory_data[factory_id] = {
-            "name": factory_info["name"],
+        # Calculate efficiency (assuming 24-hour operation)
+        efficiency = ((24 - total_downtime) / 24) * 100 if total_downtime < 24 else 0
+        
+        factory_stats.append({
+            "name": factory_config["name"],
             "production": total_production,
             "sales": total_sales,
             "revenue": total_revenue,
             "downtime": total_downtime,
-            "efficiency": 0,  # Will calculate efficiency percentage
-            "sku_unit": factory_info["sku_unit"]  # Add SKU unit for tooltips
-        }
-        
-        # Calculate efficiency (production vs planned - using production as baseline)
-        if factory_data[factory_id]["production"] > 0:
-            planned_production = factory_data[factory_id]["production"] * 1.2  # Assume 20% more was planned
-            factory_data[factory_id]["efficiency"] = (factory_data[factory_id]["production"] / planned_production) * 100
-        else:
-            factory_data[factory_id]["efficiency"] = 0
+            "efficiency": round(efficiency, 2),
+            "sku_unit": factory_config["sku_unit"]
+        })
     
-    return factory_data
+    return factory_stats
 
-@api_router.get("/dashboard-summary")
-async def get_dashboard_summary(current_user: User = Depends(get_current_user)):
-    # Get recent logs (last 30 days)
-    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-    
-    query = {"date": {"$gte": thirty_days_ago}}
-    if current_user.role == "factory_employer":
-        query["factory_id"] = current_user.factory_id
-    
-    logs = await db.daily_logs.find(query).to_list(1000)
-    
-    # Calculate summaries - removed total_production and total_sales
-    total_downtime = 0
-    total_stock = 0
-    
-    factory_summaries = {}
-    
-    for log in logs:
-        factory_id = log["factory_id"]
-        if factory_id not in factory_summaries:
-            factory_summaries[factory_id] = {
-                "name": FACTORIES.get(factory_id, {}).get("name", factory_id),
-                "production": 0,
-                "sales": 0,
-                "downtime": 0,
-                "stock": 0
+# Excel export endpoint
+@api_router.get("/export-excel")
+async def export_excel(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    factory_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    try:
+        # Build query filters based on user role and parameters
+        query = {}
+        
+        # Role-based filtering - factory employees can only export their factory data
+        if current_user["role"] == "factory_employer":
+            query["factory_id"] = current_user.get("factory_id")
+        elif factory_id:
+            query["factory_id"] = factory_id
+        
+        # Date filtering
+        if start_date or end_date:
+            date_filter = {}
+            if start_date:
+                date_filter["$gte"] = datetime.fromisoformat(start_date)
+            if end_date:
+                date_filter["$lte"] = datetime.fromisoformat(end_date)
+            query["date"] = date_filter
+        
+        # Fetch data
+        logs = await db.daily_logs.find(query).sort("date", -1).to_list(length=None)
+        
+        if not logs:
+            raise HTTPException(status_code=404, detail="No data found for the specified criteria")
+        
+        # Prepare data for Excel
+        excel_data = []
+        for log in logs:
+            # Calculate totals
+            total_production = sum(log.get("production_data", {}).values())
+            total_sales = sum(item.get("amount", 0) for item in log.get("sales_data", {}).values())
+            total_revenue = sum(
+                item.get("amount", 0) * item.get("unit_price", 0) 
+                for item in log.get("sales_data", {}).values()
+            )
+            
+            # Get factory name
+            factory_name = FACTORIES.get(log.get("factory_id", ""), {}).get("name", log.get("factory_id", "Unknown"))
+            
+            excel_data.append({
+                "Report ID": log.get("report_id", "N/A"),
+                "Date": log.get("date").strftime("%Y-%m-%d") if log.get("date") else "N/A",
+                "Factory": factory_name,
+                "Total Production": total_production,
+                "Total Sales": total_sales,
+                "Total Revenue": total_revenue,
+                "Downtime Hours": log.get("downtime_hours", 0),
+                "Created By": log.get("created_by", "Unknown"),
+                "Created At": log.get("created_at").strftime("%Y-%m-%d %H:%M:%S") if log.get("created_at") else "N/A"
+            })
+        
+        # Create DataFrame
+        df = pd.DataFrame(excel_data)
+        
+        # Create Excel file in memory
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Daily Logs', index=False)
+            
+            # Add summary sheet
+            summary_data = {
+                'Metric': ['Total Reports', 'Total Production', 'Total Sales', 'Total Revenue', 'Total Downtime'],
+                'Value': [
+                    len(excel_data),
+                    sum(row['Total Production'] for row in excel_data),
+                    sum(row['Total Sales'] for row in excel_data),
+                    sum(row['Total Revenue'] for row in excel_data),
+                    sum(row['Downtime Hours'] for row in excel_data)
+                ]
             }
+            summary_df = pd.DataFrame(summary_data)
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
         
-        # Production
-        production = sum(log["production_data"].values())
-        factory_summaries[factory_id]["production"] += production
+        output.seek(0)
         
-        # Sales
-        sales = sum(item["amount"] for item in log["sales_data"].values())
-        factory_summaries[factory_id]["sales"] += sales
+        # Create response
+        response = StreamingResponse(
+            iter([output.read()]),
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response.headers["Content-Disposition"] = f"attachment; filename=factory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
         
-        # Downtime
-        total_downtime += log["downtime_hours"]
-        factory_summaries[factory_id]["downtime"] += log["downtime_hours"]
+        return response
         
-        # Stock
-        stock = sum(log["stock_data"].values())
-        total_stock += stock
-        factory_summaries[factory_id]["stock"] += stock
+    except Exception as e:
+        logger.error(f"Excel export error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+# User management endpoints (headquarters only)
+@api_router.get("/users")
+async def get_users(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "headquarters":
+        raise HTTPException(status_code=403, detail="Access denied")
     
-    return {
-        "total_downtime": total_downtime,
-        "total_stock": total_stock,
-        "factory_summaries": factory_summaries
-    }
+    users = await db.users.find({}).to_list(length=None)
+    
+    # Convert ObjectId to string and remove password hash
+    user_responses = []
+    for user in users:
+        user["_id"] = str(user["_id"])
+        user.pop("password_hash", None)  # Remove password hash for security
+        user_responses.append(UserResponse(**user))
+    
+    return user_responses
 
-# Include the router in the main app
+@api_router.post("/users")
+async def create_user(user_data: UserCreate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "headquarters":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Check if user already exists
+    existing_user = await db.users.find_one({"username": user_data.username})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    # Hash password and create user
+    user = User(
+        username=user_data.username,
+        email=user_data.email,
+        password_hash=hash_password(user_data.password),
+        role=user_data.role,
+        factory_id=user_data.factory_id,
+        first_name=user_data.first_name,
+        last_name=user_data.last_name
+    )
+    
+    result = await db.users.insert_one(user.dict())
+    if result.inserted_id:
+        return {"message": "User created successfully", "user_id": user.id}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+@api_router.put("/users/{user_id}")
+async def update_user(user_id: str, user_update: UserUpdate, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "headquarters":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Find user
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prepare update data
+    update_data = {}
+    if user_update.username is not None:
+        # Check if username already exists (for other users)
+        existing_user = await db.users.find_one({"username": user_update.username, "id": {"$ne": user_id}})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username already exists")
+        update_data["username"] = user_update.username
+    
+    if user_update.email is not None:
+        update_data["email"] = user_update.email
+    if user_update.password is not None:
+        update_data["password_hash"] = hash_password(user_update.password)
+    if user_update.role is not None:
+        update_data["role"] = user_update.role
+    if user_update.factory_id is not None:
+        update_data["factory_id"] = user_update.factory_id
+    if user_update.first_name is not None:
+        update_data["first_name"] = user_update.first_name
+    if user_update.last_name is not None:
+        update_data["last_name"] = user_update.last_name
+    
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+    
+    result = await db.users.update_one({"id": user_id}, {"$set": update_data})
+    if result.modified_count > 0:
+        return {"message": "User updated successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to update user")
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "headquarters":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Don't allow deletion of self
+    if user_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    result = await db.users.delete_one({"id": user_id})
+    if result.deleted_count > 0:
+        return {"message": "User deleted successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="User not found")
+
+# Include the API router with the /api prefix
 app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 # Create default admin user on startup
 @app.on_event("startup")
-async def create_default_user():
+async def create_admin_user():
     # Remove existing admin user if exists
     await db.users.delete_many({"username": "admin"})
     
     # Create new admin user with updated password
     admin_data = {
         "username": "admin",
-        "email": "admin@company.com",
-        "password_hash": get_password_hash("admin1234"),
+        "email": "admin@factory.com", 
+        "password": "admin1234",
         "role": "headquarters",
-        "factory_id": None,
-        "created_at": datetime.utcnow()
+        "first_name": "Admin",
+        "last_name": "User"
     }
-    admin_obj = User(**admin_data)
-    await db.users.insert_one(admin_obj.dict())
-    logger.info("Created default admin user: admin/admin1234")
+    
+    admin_user = User(
+        username=admin_data["username"],
+        email=admin_data["email"],
+        password_hash=hash_password(admin_data["password"]),
+        role=admin_data["role"],
+        first_name=admin_data["first_name"],
+        last_name=admin_data["last_name"]
+    )
+    
+    await db.users.insert_one(admin_user.dict())
+    logger.info("Admin user created/updated successfully")
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
