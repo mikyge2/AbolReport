@@ -625,9 +625,18 @@ const DashboardTab = () => {
             x: {
                 ticks: {
                     font: {
-                        size: window.innerWidth < 640 ? 9 : 12
+                        size: window.innerWidth < 640 ? 8 : 10
                     },
-                    maxRotation: window.innerWidth < 640 ? 45 : 0
+                    maxRotation: 45,
+                    minRotation: 0,
+                    callback: function(value, index, values) {
+                        const label = this.getLabelForValue(value);
+                        // Truncate long factory names for better display
+                        if (label && label.length > 12) {
+                            return label.substring(0, 12) + '...';
+                        }
+                        return label;
+                    }
                 }
             },
             y: {
@@ -639,6 +648,30 @@ const DashboardTab = () => {
                 }
             },
         },
+        onClick: (event, elements, chart) => {
+            if (elements.length > 0) {
+                const element = elements[0];
+                const index = element.index;
+                const factoryName = chart.data.labels[index];
+                const date = new Date().toISOString().split('T')[0]; // Today's date
+                
+                // Map factory name to factory ID
+                const factoryNameToId = {
+                    "Wakene Food Complex": "wakene_food",
+                    "Amen (Victory) Water": "amen_water", 
+                    "Mintu Plast": "mintu_plast",
+                    "Mintu Export": "mintu_export"
+                };
+                
+                const factoryId = factoryNameToId[factoryName] || Object.keys(factoryNameToId).find(name => 
+                    name.toLowerCase().includes(factoryName.toLowerCase().replace('...', ''))
+                );
+                
+                if (factoryId) {
+                    handleChartPointClick(factoryId, date);
+                }
+            }
+        }
     };
 
     // Show loading state
