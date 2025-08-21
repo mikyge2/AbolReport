@@ -905,6 +905,53 @@ async def export_excel_alternative(
         logger.error(f"Alternative Excel export error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Alternative export failed: {str(e)}")
 
+# Debug endpoint to check data availability
+@api_router.get("/debug-export-data")
+async def debug_export_data(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    factory_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Debug endpoint to check what data would be exported"""
+    try:
+        query = {}
+        
+        if current_user["role"] == "factory_employer":
+            query["factory_id"] = current_user.get("factory_id")
+        elif factory_id:
+            query["factory_id"] = factory_id
+        
+        if start_date or end_date:
+            date_filter = {}
+            if start_date:
+                date_filter["$gte"] = datetime.fromisoformat(start_date)
+            if end_date:
+                date_filter["$lte"] = datetime.fromisoformat(end_date)
+            query["date"] = date_filter
+        
+        logs = await db.daily_logs.find(query).sort("date", -1).to_list(length=10)  # Limit for debugging
+        
+        return {
+            "query_used": query,
+            "total_records": await db.daily_logs.count_documents(query),
+            "sample_records": len(logs),
+            "user_role": current_user["role"],
+            "user_factory": current_user.get("factory_id"),
+            "sample_data": [
+                {
+                    "report_id": log.get("report_id"),
+                    "date": log.get("date"),
+                    "factory_id": log.get("factory_id"),
+                    "created_by": log.get("created_by")
+                } for log in logs[:3]
+            ]
+        }
+        
+    except Exception as e:
+        logger.error(f"Debug export data error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Debug failed: {str(e)}")
+
 # User management endpoints (headquarters only)
 @api_router.get("/users")
 async def get_users(current_user: dict = Depends(get_current_user)):
