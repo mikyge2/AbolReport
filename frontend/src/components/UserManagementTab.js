@@ -132,6 +132,12 @@ const UserManagementTab = () => {
     };
 
     const handleDelete = async (id) => {
+        // Check if this is the last user
+        if (users.length <= 1) {
+            toast.error('Cannot delete the last remaining user');
+            return;
+        }
+        
         if (!window.confirm('Are you sure you want to delete this user?')) return;
         try {
             const token = localStorage.getItem('token');
