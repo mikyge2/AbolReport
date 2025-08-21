@@ -324,7 +324,11 @@ const UserManagementTab = () => {
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(u.id)}
-                                                className="text-red-600 hover:text-red-800 text-sm"
+                                                disabled={users.length <= 1}
+                                                className={`text-sm ${users.length <= 1 
+                                                    ? 'text-gray-400 cursor-not-allowed' 
+                                                    : 'text-red-600 hover:text-red-800'}`}
+                                                title={users.length <= 1 ? 'Cannot delete the last remaining user' : 'Delete user'}
                                             >
                                                 Delete
                                             </button>
