@@ -790,6 +790,121 @@ async def export_excel(
         logger.error(f"Excel export error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
+# Alternative Excel export endpoint using different approach
+@api_router.get("/export-excel-alt")
+async def export_excel_alternative(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    factory_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """Alternative Excel export method optimized for shared hosting environments"""
+    try:
+        # Build query (same as main export)
+        query = {}
+        
+        if current_user["role"] == "factory_employer":
+            query["factory_id"] = current_user.get("factory_id")
+        elif factory_id:
+            query["factory_id"] = factory_id
+        
+        if start_date or end_date:
+            date_filter = {}
+            if start_date:
+                date_filter["$gte"] = datetime.fromisoformat(start_date)
+            if end_date:
+                date_filter["$lte"] = datetime.fromisoformat(end_date)
+            query["date"] = date_filter
+        
+        logs = await db.daily_logs.find(query).sort("date", -1).to_list(length=None)
+        
+        if not logs:
+            raise HTTPException(status_code=404, detail="No data found for the specified criteria")
+        
+        # Use pandas approach as backup
+        excel_data = []
+        for log in logs:
+            total_production = sum(log.get("production_data", {}).values())
+            
+            # Handle sales data
+            sales_data = log.get("sales_data", {})
+            total_sales = 0
+            total_revenue = 0
+            
+            for product, data in sales_data.items():
+                if isinstance(data, dict):
+                    amount = data.get("amount", 0)
+                    unit_price = data.get("unit_price", 0)
+                    total_sales += amount
+                    total_revenue += amount * unit_price
+                else:
+                    total_sales += data if isinstance(data, (int, float)) else 0
+            
+            factory_name = FACTORIES.get(log.get("factory_id", ""), {}).get("name", log.get("factory_id", "Unknown"))
+            
+            excel_data.append({
+                "Report ID": log.get("report_id", "N/A"),
+                "Date": log.get("date").strftime("%Y-%m-%d") if log.get("date") else "N/A",
+                "Factory": factory_name,
+                "Total Production": total_production,
+                "Total Sales": total_sales,
+                "Total Revenue": round(total_revenue, 2),
+                "Downtime Hours": log.get("downtime_hours", 0),
+                "Created By": log.get("created_by", "Unknown"),
+                "Created At": log.get("created_at").strftime("%Y-%m-%d %H:%M:%S") if log.get("created_at") else "N/A"
+            })
+        
+        # Use pandas with explicit engine
+        df = pd.DataFrame(excel_data)
+        
+        # Create BytesIO buffer
+        buffer = BytesIO()
+        
+        # Write Excel using pandas with specific engine
+        with pd.ExcelWriter(buffer, engine='openpyxl', mode='w') as writer:
+            df.to_excel(writer, sheet_name='Daily Logs', index=False)
+            
+            # Add summary
+            summary_df = pd.DataFrame({
+                'Metric': ['Total Reports', 'Total Production', 'Total Sales', 'Total Revenue', 'Total Downtime'],
+                'Value': [
+                    len(excel_data),
+                    sum(row['Total Production'] for row in excel_data),
+                    sum(row['Total Sales'] for row in excel_data),
+                    sum(row['Total Revenue'] for row in excel_data),
+                    sum(row['Downtime Hours'] for row in excel_data)
+                ]
+            })
+            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+        
+        # Get buffer content
+        buffer.seek(0)
+        content = buffer.read()
+        buffer.close()
+        
+        if len(content) == 0:
+            raise HTTPException(status_code=500, detail="Generated Excel file is empty")
+        
+        logger.info(f"Alternative Excel export: {len(content)} bytes generated")
+        
+        # Return file content directly
+        from fastapi import Response
+        
+        filename = f"factory_report_alt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return Response(
+            content=content,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"',
+                "Content-Length": str(len(content))
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Alternative Excel export error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Alternative export failed: {str(e)}")
+
 # User management endpoints (headquarters only)
 @api_router.get("/users")
 async def get_users(current_user: dict = Depends(get_current_user)):
