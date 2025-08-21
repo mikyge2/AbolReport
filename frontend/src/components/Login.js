@@ -146,6 +146,19 @@ const Login = () => {
                             </div>
                         </button>
                     </form>
+
+                    {/* Contact Support Section */}
+                    <div className="mt-6 text-center">
+                        <p className="text-gray-300 text-sm">
+                            Need an Account? Contact support at{' '}
+                            <a 
+                                href="mailto:support@abolconsortium.com"
+                                className="text-[#ffc72c] hover:text-[#ffc72c]/80 transition-colors duration-300 font-medium"
+                            >
+                                support@abolconsortium.com
+                            </a>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
