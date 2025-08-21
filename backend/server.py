@@ -653,33 +653,67 @@ async def export_excel(
         # Create DataFrame
         df = pd.DataFrame(excel_data)
         
-        # Create Excel file in memory
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, sheet_name='Daily Logs', index=False)
-            
-            # Add summary sheet
-            summary_data = {
-                'Metric': ['Total Reports', 'Total Production', 'Total Sales', 'Total Revenue', 'Total Downtime'],
-                'Value': [
-                    len(excel_data),
-                    sum(row['Total Production'] for row in excel_data),
-                    sum(row['Total Sales'] for row in excel_data),
-                    sum(row['Total Revenue'] for row in excel_data),
-                    sum(row['Downtime Hours'] for row in excel_data)
-                ]
-            }
-            summary_df = pd.DataFrame(summary_data)
-            summary_df.to_excel(writer, sheet_name='Summary', index=False)
+        # Create Excel file in memory with improved approach for hosting environments
+        from openpyxl import Workbook
+        from openpyxl.utils.dataframe import dataframe_to_rows
         
+        wb = Workbook()
+        
+        # Daily Logs Sheet
+        ws1 = wb.active
+        ws1.title = "Daily Logs"
+        
+        # Add headers
+        headers = ["Report ID", "Date", "Factory", "Total Production", "Total Sales", 
+                  "Total Revenue", "Downtime Hours", "Created By", "Created At"]
+        ws1.append(headers)
+        
+        # Add data
+        for row_data in excel_data:
+            ws1.append([row_data[header] for header in headers])
+        
+        # Summary Sheet
+        ws2 = wb.create_sheet("Summary")
+        summary_headers = ["Metric", "Value"]
+        ws2.append(summary_headers)
+        
+        summary_data = [
+            ["Total Reports", len(excel_data)],
+            ["Total Production", sum(row['Total Production'] for row in excel_data)],
+            ["Total Sales", sum(row['Total Sales'] for row in excel_data)],
+            ["Total Revenue", sum(row['Total Revenue'] for row in excel_data)],
+            ["Total Downtime", sum(row['Downtime Hours'] for row in excel_data)]
+        ]
+        
+        for row in summary_data:
+            ws2.append(row)
+        
+        # Save to BytesIO with proper handling
+        output = BytesIO()
+        wb.save(output)
         output.seek(0)
         
-        # Create response
+        # Get the content as bytes
+        content = output.getvalue()
+        
+        # Verify content is not empty
+        if len(content) == 0:
+            raise HTTPException(status_code=500, detail="Generated Excel file is empty")
+        
+        # Create proper streaming response for hosting environments
+        def generate():
+            yield content
+        
+        # Create response with proper headers
         response = StreamingResponse(
-            iter([output.read()]),
+            generate(),
             media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
-        response.headers["Content-Disposition"] = f"attachment; filename=factory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        filename = f"factory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response.headers["Content-Length"] = str(len(content))
+        response.headers["Cache-Control"] = "no-cache"
         
         return response
         
