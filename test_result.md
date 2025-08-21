@@ -413,6 +413,18 @@ test_plan:
         agent: "main"
         comment: "✅ CHART POPUP FUNCTIONALITY VERIFIED: Chart data point popups are properly implemented with interactive onClick handlers. The DataDetailModal component shows comprehensive daily log details including production data, sales data, downtime information, stock data, and report metadata. The handleChartPointClick function fetches specific daily log data for clicked chart points. Modal functionality is working correctly with proper error handling and loading states."
 
+  - task: "Fix Factory Comparison bar chart clickability issue"
+    implemented: true
+    working: true
+    file: "frontend/src/components/DashboardTab.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "✅ FACTORY COMPARISON BAR CLICKABILITY ISSUE FIXED: Successfully removed onClick handlers from Factory Comparison bar charts (Production, Sales, Downtime) in DashboardTab.js. The issue was that bar charts in the Factory Comparison Analytics section had onClick handlers that tried to display detailed popups but were failing. According to user requirements, these bars should not be clickable anyway. Removed onClick handlers from both barChartOptions (lines 579-604) and downtimeBarChartOptions (lines 652-677). Testing confirmed: 1) Factory Comparison bars no longer trigger click events - working as intended, 2) All Factories Overview line charts retain their clickable functionality for data point details, 3) No modal popups appear when clicking Factory Comparison bars, 4) Dashboard functionality remains intact. The user's problem statement is now fully resolved - Factory Comparison bars are non-clickable as requested, while All Factories Overview graphs continue to work perfectly for detailed information display."
+
 agent_communication:
   - agent: "main"
     message: "✅ ALL CURRENT TASK REQUIREMENTS COMPLETED SUCCESSFULLY: 1) ✅ LOGIN PAGE ENHANCEMENT: Added contact support text below login button with styled email link (support@abolconsortium.com) that matches the existing design theme. 2) ✅ ADMIN USER VERIFICATION: Confirmed admin user already exists with correct credentials (username: admin, password: admin1234, role: headquarters) and successfully tested login functionality. 3) ✅ DATABASE POPULATION: Successfully populated database with 118 daily logs for August 1-21, 2025 across all 4 factories (wakene_food: 29, amen_water: 32, mintu_plast: 33, mintu_export: 24 logs). Generated comprehensive data including production metrics, sales data, downtime tracking, and stock information. All requirements from the problem statement have been fully implemented and verified."
