@@ -575,32 +575,8 @@ const DashboardTab = () => {
                     }
                 }
             },
-        },
-        onClick: (event, elements, chart) => {
-            if (elements.length > 0) {
-                const element = elements[0];
-                const index = element.index;
-                const factoryName = chart.data.labels[index];
-                const today = new Date();
-                const date = today.toISOString(); // Full ISO format for better matching
-                
-                // Map factory name to factory ID
-                const factoryNameToId = {
-                    "Wakene Food Complex": "wakene_food",
-                    "Amen (Victory) Water": "amen_water", 
-                    "Mintu Plast": "mintu_plast",
-                    "Mintu Export": "mintu_export"
-                };
-                
-                const factoryId = factoryNameToId[factoryName] || Object.keys(factoryNameToId).find(name => 
-                    name.toLowerCase().includes(factoryName.toLowerCase().replace('...', ''))
-                );
-                
-                if (factoryId) {
-                    handleChartPointClick(factoryId, date);
-                }
-            }
         }
+        // Removed onClick handler - Factory Comparison bars should not be clickable
     };
 
     const downtimeBarChartOptions = {
