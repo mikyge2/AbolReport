@@ -498,7 +498,7 @@ const LoggingTab = () => {
                 <div className="p-6">
                     {activeTab === 'create' && (
                         <div>
-                            <h2 className="text-2xl font-bold text-futuristic-primary mb-6">Create Daily Production Log</h2>
+                            <h2 className="text-2xl font-bold text-futuristic-primary mb-6">Create Daily Log</h2>
                             {renderForm(handleSubmit, false)}
                         </div>
                     )}
