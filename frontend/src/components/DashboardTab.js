@@ -662,7 +662,7 @@ const DashboardTab = () => {
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 text-xs sm:text-sm">
                         <span className="text-futuristic-secondary">
-                            Role: <span className="font-medium text-[#ffc72c]">{user?.role}</span>
+                            Role: <span className="font-medium text-[#ffc72c]">{user?.role === 'headquarters' ? 'Headquarters' : user?.role}</span>
                         </span>
                         {user?.factory_id && (
                             <span className="text-futuristic-secondary">
