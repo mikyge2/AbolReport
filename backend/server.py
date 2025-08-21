@@ -16,6 +16,7 @@ from passlib.context import CryptContext
 import pandas as pd
 from io import BytesIO
 import json
+import openpyxl
 
 
 ROOT_DIR = Path(__file__).parent
