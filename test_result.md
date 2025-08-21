@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Add a user with Username: admin, password: admin1234, role: headquarter - COMPLETED SUCCESSFULLY"
+user_problem_statement: "CURRENT TASK REQUIREMENTS: 1. On the login page below the login button add text: 'Need an Account? Contact support at support@abolconsortium.com' ✅ COMPLETED 2. Create a user with username: admin, password: admin1234 and role: headquarters ✅ ALREADY EXISTS 3. Populate database with reports starting from August 1, 2025 till August 21, 2025 (today) for all factories ✅ COMPLETED"
 
 backend:
   - task: "Update daily-logs endpoint to support filtering by created_by_me parameter"
