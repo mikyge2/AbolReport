@@ -628,13 +628,24 @@ async def export_excel(
         # Prepare data for Excel
         excel_data = []
         for log in logs:
-            # Calculate totals
+            # Calculate totals - Handle both old and new sales_data formats
             total_production = sum(log.get("production_data", {}).values())
-            total_sales = sum(item.get("amount", 0) for item in log.get("sales_data", {}).values())
-            total_revenue = sum(
-                item.get("amount", 0) * item.get("unit_price", 0) 
-                for item in log.get("sales_data", {}).values()
-            )
+            
+            # Handle sales data - support both formats
+            sales_data = log.get("sales_data", {})
+            total_sales = 0
+            total_revenue = 0
+            
+            for product, data in sales_data.items():
+                if isinstance(data, dict):
+                    # New format with amount and unit_price
+                    amount = data.get("amount", 0)
+                    unit_price = data.get("unit_price", 0)
+                    total_sales += amount
+                    total_revenue += amount * unit_price
+                else:
+                    # Old format - just numbers
+                    total_sales += data if isinstance(data, (int, float)) else 0
             
             # Get factory name
             factory_name = FACTORIES.get(log.get("factory_id", ""), {}).get("name", log.get("factory_id", "Unknown"))
@@ -651,12 +662,12 @@ async def export_excel(
                 "Created At": log.get("created_at").strftime("%Y-%m-%d %H:%M:%S") if log.get("created_at") else "N/A"
             })
         
-        # Create DataFrame
-        df = pd.DataFrame(excel_data)
+        # Log data for debugging
+        logger.info(f"Preparing Excel export with {len(excel_data)} records")
         
-        # Create Excel file in memory with improved approach for hosting environments
+        # Create Excel file using openpyxl directly (more reliable for hosting)
         from openpyxl import Workbook
-        from openpyxl.utils.dataframe import dataframe_to_rows
+        from openpyxl.styles import Font, PatternFill, Alignment
         
         wb = Workbook()
         
@@ -664,62 +675,119 @@ async def export_excel(
         ws1 = wb.active
         ws1.title = "Daily Logs"
         
-        # Add headers
+        # Add headers with styling
         headers = ["Report ID", "Date", "Factory", "Total Production", "Total Sales", 
                   "Total Revenue", "Downtime Hours", "Created By", "Created At"]
-        ws1.append(headers)
+        
+        # Style headers
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        for col, header in enumerate(headers, 1):
+            cell = ws1.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
         
         # Add data
-        for row_data in excel_data:
-            ws1.append([row_data[header] for header in headers])
+        for row_idx, row_data in enumerate(excel_data, 2):
+            for col_idx, header in enumerate(headers, 1):
+                ws1.cell(row=row_idx, column=col_idx, value=row_data[header])
+        
+        # Auto-adjust column widths
+        for col in ws1.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws1.column_dimensions[column].width = adjusted_width
         
         # Summary Sheet
         ws2 = wb.create_sheet("Summary")
         summary_headers = ["Metric", "Value"]
-        ws2.append(summary_headers)
+        
+        # Style summary headers
+        for col, header in enumerate(summary_headers, 1):
+            cell = ws2.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
         
         summary_data = [
             ["Total Reports", len(excel_data)],
             ["Total Production", sum(row['Total Production'] for row in excel_data)],
             ["Total Sales", sum(row['Total Sales'] for row in excel_data)],
-            ["Total Revenue", sum(row['Total Revenue'] for row in excel_data)],
-            ["Total Downtime", sum(row['Downtime Hours'] for row in excel_data)]
+            ["Total Revenue", round(sum(row['Total Revenue'] for row in excel_data), 2)],
+            ["Total Downtime Hours", sum(row['Downtime Hours'] for row in excel_data)]
         ]
         
-        for row in summary_data:
-            ws2.append(row)
+        for row_idx, (metric, value) in enumerate(summary_data, 2):
+            ws2.cell(row=row_idx, column=1, value=metric)
+            ws2.cell(row=row_idx, column=2, value=value)
         
-        # Save to BytesIO with proper handling
+        # Auto-adjust summary sheet column widths
+        for col in ws2.columns:
+            max_length = 0
+            column = col[0].column_letter
+            for cell in col:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 30)
+            ws2.column_dimensions[column].width = adjusted_width
+        
+        # Save to BytesIO
         output = BytesIO()
         wb.save(output)
         output.seek(0)
         
-        # Get the content as bytes
+        # Get the content
         content = output.getvalue()
+        output.close()
         
         # Verify content is not empty
-        if len(content) == 0:
+        content_size = len(content)
+        logger.info(f"Generated Excel file size: {content_size} bytes")
+        
+        if content_size == 0:
             raise HTTPException(status_code=500, detail="Generated Excel file is empty")
         
-        # Create proper streaming response for hosting environments
-        def generate():
+        if content_size < 1000:  # Less than 1KB might indicate an issue
+            logger.warning(f"Excel file seems unusually small: {content_size} bytes")
+        
+        # Create filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"factory_report_{timestamp}.xlsx"
+        
+        # Create streaming response optimized for hosting environments
+        def iter_content():
             yield content
         
-        # Create response with proper headers
         response = StreamingResponse(
-            generate(),
+            iter_content(),
             media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         
-        filename = f"factory_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        # Set proper headers
         response.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
-        response.headers["Content-Length"] = str(len(content))
-        response.headers["Cache-Control"] = "no-cache"
+        response.headers["Content-Length"] = str(content_size)
+        response.headers["Content-Type"] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
         
+        logger.info(f"Excel export completed: {filename} ({content_size} bytes)")
         return response
         
     except Exception as e:
-        logger.error(f"Excel export error: {str(e)}")
+        logger.error(f"Excel export error: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
 # User management endpoints (headquarters only)
