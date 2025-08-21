@@ -257,19 +257,6 @@ factory-portal/
 
 ## 🔧 Configuration
 
-### Environment Variables
-
-#### Backend (.env)
-```env
-MONGO_URL=mongodb://localhost:27017/factory_portal
-JWT_SECRET_KEY=your_jwt_secret_key_here
-```
-
-#### Frontend (.env)
-```env
-REACT_APP_BACKEND_URL=http://localhost:8001
-```
-
 ### Supervisor Configuration
 The project uses Supervisor to manage services:
 - **Backend**: FastAPI server on port 8001
@@ -339,8 +326,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 For support and questions:
-- 📧 **Email**: support@abolconsortium.com
-- 📖 **Documentation**: Check the `/docs` directory
+- 📧 **Email**: michaelgetuk@gmail.com
 - 🐛 **Issues**: Create an issue in the repository
 - 💬 **Discussions**: Use GitHub Discussions for questions
 
