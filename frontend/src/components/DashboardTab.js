@@ -581,7 +581,8 @@ const DashboardTab = () => {
                 const element = elements[0];
                 const index = element.index;
                 const factoryName = chart.data.labels[index];
-                const date = new Date().toISOString().split('T')[0]; // Today's date
+                const today = new Date();
+                const date = today.toISOString(); // Full ISO format for better matching
                 
                 // Map factory name to factory ID
                 const factoryNameToId = {
