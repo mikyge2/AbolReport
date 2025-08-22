@@ -159,7 +159,7 @@ class DailyLogUpdate(BaseModel):
 
 
 # Create FastAPI app
-app = FastAPI(title="Factory Management System", version="1.0.0")
+app = FastAPI(title="Factory Management System", version="1.0.0", docs_url="/admin-panel", redoc_url=None)
 api_router = APIRouter(prefix="/api")
 
 # CORS middleware
